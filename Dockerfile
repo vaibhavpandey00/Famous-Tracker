@@ -2,8 +2,6 @@ FROM node:18-alpine
 
 RUN apk add --no-cache openssl
 
-EXPOSE 3000
-
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -18,5 +16,7 @@ RUN npm remove @shopify/cli
 COPY . .
 
 RUN npm run build
+
+EXPOSE 3000
 
 CMD ["npm", "run", "docker-start"]

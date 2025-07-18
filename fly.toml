@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for famous-tracking on 2025-07-19T01:43:44+05:30
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'famous-tracking'
+primary_region = 'dfw'
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  SHOPIFY_APP_URL = "https://famous-tracking.fly.dev"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
