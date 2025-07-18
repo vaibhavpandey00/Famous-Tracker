@@ -1,0 +1,36 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "65c24964cec15300f4d4e3ccc5930eb6"
+name = "Famous Tracker"
+handle = "famous-tracker"
+application_url = "https://elliott-forecast-scenario-plastics.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2024-10"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topic = "orders/create"
+  uri = "/webhooks"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_orders,read_customers,write_customers,read_products"
+
+[auth]
+redirect_urls = ["https://elliott-forecast-scenario-plastics.trycloudflare.com/auth/callback", "https://elliott-forecast-scenario-plastics.trycloudflare.com/auth/shopify/callback", "https://elliott-forecast-scenario-plastics.trycloudflare.com/api/auth/callback"]
+
+[pos]
+embedded = false

@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  session_id    String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String    @unique
+  shop          String    @unique
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        String?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+// Define an embedded type for Socials
+type Social {
+  platform  String
+  link      String
+  followers Int? // Followers might be optional or not always available
+}
+
+// Define an embedded type for Address
+type Address {
+  street  String? // Make fields optional if not always present
+  city    String?
+  state   String?
+  zipCode String?
+  country String?
+}
+
+model Celebs {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName    String
+  email       String   @unique // Index: Unique index on email
+  phone       String?
+  address     Address?
+  categories  String[]
+  socials     Social[]
+  maxFollower String? //Added Max Follower to be filled by comparing followers of all the socials and taking out the maximum one
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categories]) // Index: For fast lookup by category
+  @@index([fullName]) // Index: For fast lookup by full name
+  @@index([socials.platform]) // Index: For querying by social platform
+  @@index([socials.followers]) // Index: For querying by follower count
+}
+
+model Shops {
+  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+  shopId             String        @unique
+  subscriptionStatus HasActiveSubs
+
+  // Personal Information
+  name  String
+  email String @unique // Assuming email should be unique for each shop
+
+  // Alert Channels
+  emailAlerts   Boolean @default(false)
+  slackAlerts   Boolean @default(false)
+  webhookAlerts Boolean @default(true)
+  inAppAlerts   Boolean @default(false)
+
+  minimumOrderValue Int @default(0)
+  minimumFollowers  Int @default(0)
+
+  categories ShopCategories
+
+  alertFrequency String @default("immediate")
+
+  quietHours ShopQuietHours
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+type HasActiveSubs {
+  active Boolean @default(false)
+  subId  String
+}
+
+// Embedded document for Alert Categories
+type ShopCategories {
+  celebrity  Boolean @default(true)
+  influencer Boolean @default(true)
+  athlete    Boolean @default(true)
+  musician   Boolean @default(true)
+}
+
+// Embedded document for Quiet Hours
+type ShopQuietHours {
+  enabled Boolean @default(false)
+  start   String  @default("22:00")
+  end     String  @default("08:00")
+}
