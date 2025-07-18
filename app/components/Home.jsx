@@ -111,10 +111,10 @@ const stats = [
 ]
 
 const integrations = [
-    { name: "Klaviyo", status: "connected", color: "bg-green-500" },
-    { name: "Slack", status: "connected", color: "bg-green-500" },
+    { name: "Klaviyo", status: "disconnected", color: "bg-gray-400" },
+    { name: "Slack", status: "disconnected", color: "bg-gray-400" },
     { name: "Postscript", status: "disconnected", color: "bg-gray-400" },
-    { name: "Gorgias", status: "connected", color: "bg-green-500" },
+    { name: "Gorgias", status: "disconnected", color: "bg-gray-400" },
     { name: "Webhooks", status: "connected", color: "bg-green-500" },
 ]
 

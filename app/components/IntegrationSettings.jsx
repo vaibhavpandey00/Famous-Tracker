@@ -7,7 +7,7 @@ const integrations = [
         name: "Klaviyo",
         description: "Email marketing automation",
         icon: Mail,
-        status: "connected",
+        status: "disconnected",
         color: "bg-orange-500",
         settings: {
             apiKey: "kl_***************",
@@ -21,7 +21,7 @@ const integrations = [
         name: "Slack",
         description: "Team communication",
         icon: MessageSquare,
-        status: "connected",
+        status: "disconnected",
         color: "bg-purple-500",
         settings: {
             webhookUrl: "https://hooks.slack.com/services/***",
@@ -49,7 +49,7 @@ const integrations = [
         name: "Gorgias",
         description: "Customer support",
         icon: MessageSquare,
-        status: "connected",
+        status: "disconnected",
         color: "bg-green-500",
         settings: {
             apiKey: "gor_***************",

@@ -1,22 +1,15 @@
-import { useEffect, useState } from "react";
-import { json, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import { TitleBar } from "@shopify/app-bridge-react";
 import {
-  Page,
-  Text,
-  Card,
-  CalloutCard,
-  InlineGrid,
-  Divider,
-  BlockStack,
   Banner,
   Button,
-  InlineStack,
-  List
+  List,
+  Text
 } from "@shopify/polaris";
-import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import { useEffect, useState } from "react";
 import Home from "../components/Home";
 import PricingPage from "../components/PricingPage";
+import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
   const { getShopData } = await import("../utils/shopUtils");
@@ -47,7 +40,7 @@ export const action = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
   const shopData = await request.json();
-  console.log("Action Shop Data:", shopData);
+  // console.log("Action Shop Data:", shopData);
 
   const updatedShopData = await updateShopRecord(admin, shopData);
   console.log("Updated Shop Data:", updatedShopData);

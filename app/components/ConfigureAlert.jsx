@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Bell, Mail, MessageSquare, Webhook, DollarSign, Users, Save, X } from "lucide-react"
 
 export default function ConfigureAlerts({ formData, setFormData, onClose, handleFormSubmit }) {
@@ -15,8 +14,8 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
 
     const handleSave = () => {
         // Handle save logic here
-        console.log("Saving alert settings:", formData)
-        onClose()
+        handleFormSubmit();
+        onClose();
     }
 
     return (
@@ -272,7 +271,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                         Cancel
                     </button>
                     <button
-                        onClick={handleFormSubmit}
+                        onClick={handleSave}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors"
                     >
                         <Save className="h-4 w-4" />
