@@ -38,24 +38,31 @@ export const loader = async ({ request }) => {
 
   const { getShopData } = await import("../utils/shopUtils");
 
-  const rawShopData = await getShopData(admin, session.shop);
-  const { subscriptionStatus, ...restOfShopData } = rawShopData;
+  try {
+    console.log("Loader: Attempting to fetch shop data using admin.graphql...");
+    const rawShopData = await getShopData(admin, session.shop);
+    console.log("Loader: Successfully fetched raw shop data.");
 
-  // Create the new object with the desired structure
-  const modifiedShopData = {
-    ...restOfShopData,
-    haveActiveSubscription: subscriptionStatus?.active || false,
-  };
+    const { subscriptionStatus, ...restOfShopData } = rawShopData;
 
-  //  Remove fields that never to be mutated by the user
-  delete modifiedShopData.id;
-  delete modifiedShopData.shopId;
-  delete modifiedShopData.shopName;
-  delete modifiedShopData.createdAt;
-  delete modifiedShopData.updatedAt;
-  delete modifiedShopData.subscriptionStatus;
+    const modifiedShopData = {
+      ...restOfShopData,
+      haveActiveSubscription: subscriptionStatus?.active || false,
+    };
 
-  return modifiedShopData;
+    delete modifiedShopData.id;
+    delete modifiedShopData.shopId;
+    delete modifiedShopData.createdAt;
+    delete modifiedShopData.updatedAt;
+    delete modifiedShopData.subscriptionStatus;
+
+    console.log("Loader: Returning modified shop data.");
+    return modifiedShopData;
+  } catch (error) {
+    console.error("Loader: Error during shop data processing or fetching:", error);
+    // Re-throw the error to be caught by the ErrorBoundary
+    throw error;
+  }
 };
 
 export const action = async ({ request }) => {
