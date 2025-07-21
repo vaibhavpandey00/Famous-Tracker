@@ -43,7 +43,7 @@ const getShopID = async (admin) => {
     }
 };
 
-export const getShopData = async (admin) => {
+export const getShopData = async (admin, shop) => {
     const graphqlShopID = await getShopID(admin);
     // console.log("GraphQL Shop Data:", graphqlShopID); // Returns the shop ID retrieved using GraphQL API
 
@@ -53,7 +53,7 @@ export const getShopData = async (admin) => {
     let shopData;
 
     if (graphqlShopID !== dbShopRecord?.shopId) {
-        shopData = await createShopRecord(graphqlShopID);
+        shopData = await createShopRecord(graphqlShopID, shop);
         console.log("New Shop:", shopData);
     }
     else {
@@ -64,9 +64,10 @@ export const getShopData = async (admin) => {
     return shopData;
 }
 
-const createShopRecord = async (graphqlShopID) => {
+const createShopRecord = async (graphqlShopID, shop) => {
     const shopData = {
         shopId: graphqlShopID,
+        shopName: shop,
         subscriptionStatus: {
             active: true,
             subId: "123456789",

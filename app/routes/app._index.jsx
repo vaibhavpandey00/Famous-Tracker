@@ -38,7 +38,7 @@ export const loader = async ({ request }) => {
 
   const { getShopData } = await import("../utils/shopUtils");
 
-  const rawShopData = await getShopData(admin);
+  const rawShopData = await getShopData(admin, session.shop);
   const { subscriptionStatus, ...restOfShopData } = rawShopData;
 
   // Create the new object with the desired structure
@@ -50,6 +50,7 @@ export const loader = async ({ request }) => {
   //  Remove fields that never to be mutated by the user
   delete modifiedShopData.id;
   delete modifiedShopData.shopId;
+  delete modifiedShopData.shopName;
   delete modifiedShopData.createdAt;
   delete modifiedShopData.updatedAt;
   delete modifiedShopData.subscriptionStatus;
