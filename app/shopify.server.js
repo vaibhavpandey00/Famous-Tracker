@@ -6,7 +6,7 @@ import {
   BillingInterval
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
-import prisma from "./db.server";
+import prisma, { prismaConnectionPromise } from "./db.server";
 
 export const MONTHLY_PLAN = "Monthly Subscription";
 
