@@ -70,6 +70,7 @@ model Celebs {
 model Shops {
   id                 String        @id @default(auto()) @map("_id") @db.ObjectId
   shopId             String        @unique
+  shopName           String?
   subscriptionStatus HasActiveSubs
 
   // Personal Information
