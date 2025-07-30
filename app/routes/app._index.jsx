@@ -3,31 +3,28 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import {
   Banner,
   Button,
-  List,
   Text
 } from "@shopify/polaris";
 import { useEffect, useState } from "react";
 import Home from "../components/Home";
 import PricingPage from "../components/PricingPage";
 import { authenticate } from "../shopify.server";
-import { useRouteError, isRouteErrorResponse } from "@remix-run/react"; // Import these for ErrorBoundary
+import { useRouteError, isRouteErrorResponse } from "@remix-run/react";
+import logger from "../utils/logger.client";
 
 export const loader = async ({ request }) => {
-  // --- START: Added Logging and Session Check ---
   console.log("Loader: Starting authentication process...");
 
   const { admin, session } = await authenticate.admin(request);
 
   console.log("Loader: Authentication attempt completed.");
-  console.log("  Session exists:", !!session); // Logs true if session is an object, false otherwise
+  console.log("  Session exists:", !!session);
 
   if (session) {
     console.log("  Session ID:", session.id);
     console.log("  Access Token present:", !!session.accessToken ? "YES" : "NO");
   } else {
     console.warn("Loader: No session object found after authenticate.admin. This might indicate an issue or a pending redirect.");
-    // If authenticate.admin didn't redirect, you might need to handle it here.
-    // For embedded apps, it typically handles the redirect itself.
     throw new Error("Authentication failed: No session available. Please try reinstalling the app.");
   }
 
@@ -36,10 +33,10 @@ export const loader = async ({ request }) => {
     throw new Error("Internal error: Admin context not available. Please try again.");
   }
 
-  const { getShopData } = await import("../utils/shopUtils");
+  const { getShopData } = await import("../utils/shopUtils.server");
 
   try {
-    console.log("Loader: Attempting to fetch shop data using admin.graphql...");
+    // console.log("Loader: Attempting to fetch shop data using admin.graphql...");
     const rawShopData = await getShopData(admin, session.shop);
     console.log("Loader: Successfully fetched raw shop data.");
 
@@ -56,7 +53,7 @@ export const loader = async ({ request }) => {
     delete modifiedShopData.updatedAt;
     delete modifiedShopData.subscriptionStatus;
 
-    console.log("Loader: Returning modified shop data.");
+    console.log("Loader: Returning shop data.");
     return modifiedShopData;
   } catch (error) {
     console.error("Loader: Error during shop data processing or fetching:", error);
@@ -66,22 +63,36 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { addCeleb } = await import("../utils/addCelebs");
-  const { updateShopRecord } = await import("../utils/shopUtils");
+  // const { addCeleb } = await import("../utils/addCelebs");
+  const { updateShopRecord } = await import("../utils/shopUtils.server");
   const { admin } = await authenticate.admin(request);
 
   const shopData = await request.json();
-  // console.log("Action Shop Data:", shopData);
+  const Action = shopData.Action;
+  console.log("Action:", Action);
 
-  const updatedShopData = await updateShopRecord(admin, shopData);
-  console.log("Updated Shop Data:", updatedShopData);
+
+  switch (Action) {
+    case "updateShopRecord":
+      delete shopData.Action;
+      const updatedShopData = await updateShopRecord(admin, shopData);
+      console.log("Updated Shop Data:", updatedShopData);
+      break;
+
+    case "createCelebRecord":
+      console.log("Creating Celeb Record...");
+      break;
+
+    default:
+      logger.error("Unknown action:", Action);
+      break;
+  }
 
   return null;
 };
 
 export default function Index() {
   const fetcher = useFetcher();
-  // const shopify = useAppBridge();
   const loaderData = useLoaderData();
   const [ formData, setFormData ] = useState({
     // Personal Information
@@ -195,7 +206,7 @@ export default function Index() {
   //   return changes;
   // };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = (getAction) => {
     console.log("Form submit requested...");
 
     // Check if data has changed
@@ -212,6 +223,11 @@ export default function Index() {
 
     const dataToUpdate = { ...formData };
     delete dataToUpdate.haveActiveSubscription;
+
+    const Action = getAction ? "updateShopRecord" : "createCelebRecord";
+    logger.info("Action:", Action);
+
+    dataToUpdate.Action = Action;
 
     fetcher.submit(JSON.stringify(dataToUpdate), {
       method: "post",
@@ -245,26 +261,7 @@ export default function Index() {
 
         </div>
 
-
       </div>
-
-      {!formData.name && !formData.email && formData.haveActiveSubscription && (
-        <div className="flex justify-start">
-          <Banner
-            title="Before you move ahead, please provide your detials in Configure Alerts:"
-            tone="warning"
-          >
-            <List>
-              <List.Item>
-                We need your name to address you.
-              </List.Item>
-              <List.Item>
-                We need your email address to send you alerts.
-              </List.Item>
-            </List>
-          </Banner>
-        </div>
-      )}
 
       {/* Home */}
       {activeTab === "home" && formData.haveActiveSubscription && (<Home formData={formData} setFormData={setFormData} handleFormSubmit={handleFormSubmit} />
@@ -290,7 +287,7 @@ export default function Index() {
 }
 
 export function ErrorBoundary() {
-  const error = useRouteError(); // Get the error from Remix
+  const error = useRouteError();
 
   // Log the error for debugging purposes (this will appear in your server logs)
   console.error("ErrorBoundary caught an error:", error);

@@ -14,7 +14,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
 
     const handleSave = () => {
         // Handle save logic here
-        handleFormSubmit();
+        handleFormSubmit("updateShopRecord");
         onClose();
     }
 
