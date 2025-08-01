@@ -1,4 +1,4 @@
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { json, useFetcher, useLoaderData } from "@remix-run/react";
 import { TitleBar } from "@shopify/app-bridge-react";
 import {
   Banner,
@@ -15,14 +15,14 @@ import logger from "../utils/logger.client";
 export const loader = async ({ request }) => {
   console.log("Loader: Starting authentication process...");
 
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session, billing } = await authenticate.admin(request);
 
   console.log("Loader: Authentication attempt completed.");
-  console.log("  Session exists:", !!session);
+  console.log("Session exists:", !!session);
 
   if (session) {
-    console.log("  Session ID:", session.id);
-    console.log("  Access Token present:", !!session.accessToken ? "YES" : "NO");
+    console.log("Session ID:", session.id);
+    console.log("Access Token present:", !!session.accessToken ? "YES" : "NO");
   } else {
     console.warn("Loader: No session object found after authenticate.admin. This might indicate an issue or a pending redirect.");
     throw new Error("Authentication failed: No session available. Please try reinstalling the app.");
@@ -33,19 +33,52 @@ export const loader = async ({ request }) => {
     throw new Error("Internal error: Admin context not available. Please try again.");
   }
 
+  let checkPlans;
+  let hasActiveSubscription = false;
+  let subscriptionId = null;
+
+  try {
+    // This is the line that's failing
+    checkPlans = await billing.check();
+    hasActiveSubscription = checkPlans.hasActivePayment;
+    subscriptionId = checkPlans.appSubscriptions[ 0 ]?.id;
+  } catch (error) {
+    console.error("Failed to check billing:", error.message);
+    hasActiveSubscription = false;
+    throw error;
+  }
+
+  console.log("Loader: hasActiveSubscription:", hasActiveSubscription);
+
+  // if (hasActiveSubscription) {
+  //   await billing.cancel({
+  //     subscriptionId: subscriptionId,
+  //     isTest: true
+  //   })
+  // }
+
+  if (!hasActiveSubscription) {
+    const dataToSend = { haveActiveSubscription: hasActiveSubscription };
+    return dataToSend;
+  }
+
   const { getShopData } = await import("../utils/shopUtils.server");
 
   try {
+    const shopName = session.shop.replace(".myshopify.com", "");
     // console.log("Loader: Attempting to fetch shop data using admin.graphql...");
-    const rawShopData = await getShopData(admin, session.shop);
+    const rawShopData = await getShopData(admin, shopName, checkPlans);
     console.log("Loader: Successfully fetched raw shop data.");
 
-    const { subscriptionStatus, ...restOfShopData } = rawShopData;
+    const hasCompletedWelcome = rawShopData.termsAccepted;
 
-    const modifiedShopData = {
-      ...restOfShopData,
-      haveActiveSubscription: subscriptionStatus?.active || false,
-    };
+    if (!hasCompletedWelcome) {
+      return redirect("/app/welcome");
+    }
+
+    const modifiedShopData = { ...rawShopData };
+
+    modifiedShopData.haveActiveSubscription = hasActiveSubscription;
 
     delete modifiedShopData.id;
     delete modifiedShopData.shopId;
@@ -71,12 +104,10 @@ export const action = async ({ request }) => {
   const Action = shopData.Action;
   console.log("Action:", Action);
 
-
   switch (Action) {
     case "updateShopRecord":
       delete shopData.Action;
-      const updatedShopData = await updateShopRecord(admin, shopData);
-      console.log("Updated Shop Data:", updatedShopData);
+      await updateShopRecord(admin, shopData);
       break;
 
     case "createCelebRecord":
@@ -84,7 +115,7 @@ export const action = async ({ request }) => {
       break;
 
     default:
-      logger.error("Unknown action:", Action);
+      console.error("Unknown action:", Action);
       break;
   }
 
@@ -128,20 +159,22 @@ export default function Index() {
   const [ activeTab, setActiveTab ] = useState("home");
 
   useEffect(() => {
-    if (loaderData) {
+    if (loaderData && loaderData.haveActiveSubscription) {
       const updatedFormData = {
         ...formData,
         ...loaderData,
         categories: { ...formData.categories, ...loaderData.categories },
         quietHours: { ...formData.quietHours, ...loaderData.quietHours },
       };
-
       setFormData(updatedFormData);
 
       // Store original data for comparison (excluding haveActiveSubscription)
       const originalDataCopy = { ...updatedFormData };
       delete originalDataCopy.haveActiveSubscription;
       setOriginalData(originalDataCopy);
+    }
+    if (loaderData && !loaderData.haveActiveSubscription) {
+      setFormData({ ...formData, haveActiveSubscription: false });
     }
   }, [ loaderData ]);
 
@@ -207,24 +240,24 @@ export default function Index() {
   // };
 
   const handleFormSubmit = (getAction) => {
-    console.log("Form submit requested...");
+    logger.log("Form submit requested...");
 
     // Check if data has changed
     if (!hasDataChanged()) {
-      console.log("No changes detected, skipping submission");
+      logger.log("No changes detected, skipping submission");
       return;
     }
 
-    console.log("Changes detected, submitting form...");
+    logger.log("Changes detected, submitting form...");
 
     //Log what changed for debugging
     // const changedFields = getChangedFields();
-    // console.log("Changed fields:", changedFields);
+    // logger.log("Changed fields:", changedFields);
 
     const dataToUpdate = { ...formData };
     delete dataToUpdate.haveActiveSubscription;
 
-    const Action = getAction ? "updateShopRecord" : "createCelebRecord";
+    const Action = getAction;
     logger.info("Action:", Action);
 
     dataToUpdate.Action = Action;
@@ -242,8 +275,7 @@ export default function Index() {
 
       {/* Toggle tab home and pricing */}
       <div
-        className="flex w-[70%] items-center justify-between mb-3 space-x-4"
-      >
+        className="flex w-[70%] items-center justify-between mb-3 space-x-4">
 
         <Text as="h2" variant="headingLg">/ {activeTab === "home" ? "Dashboard" : "Pricing"}</Text>
 

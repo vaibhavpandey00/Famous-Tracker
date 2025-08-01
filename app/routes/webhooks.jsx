@@ -7,11 +7,6 @@ export const action = async ({ request }) => {
     console.log("A new webhook has been received!");
 
     switch (topic) {
-        case 'APP_UNINSTALLED':
-            console.log(`Received ${topic} webhook for shop: ${shop}`);
-            // TODO: Implement logic to handle app uninstallation (e.g., delete shop data)
-            return new Response('App uninstalled', { status: 200 });
-
         case 'CUSTOMERS_DATA_REQUEST':
             console.log(`Received ${topic} webhook for shop: ${shop}`);
             // TODO: Implement logic for customer data request (GDPR compliance)

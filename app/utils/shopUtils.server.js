@@ -1,38 +1,69 @@
 import prisma from "../db.server";
 import { getCache, setCache, invalidateCache } from "./cache.server.js";
 
+// Retry utility for handling network issues
+const retryOperation = async (operation, maxRetries = 3, delay = 1000) => {
+  let lastError;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error.message);
+      lastError = error;
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+};
+
+const getShopID = async (admin) => {
+  const query = `
+      query getShopInfo {
+          shop {
+              id
+              name
+              email
+           }
+       }
+   `;
+
+  try {
+    const response = await retryOperation(async () => {
+      const result = await admin.graphql(query);
+      return result.json();
+    });
+
+    if (!response?.data?.shop) {
+      throw new Error('Invalid shop data received from Shopify');
+    }
+    return response.data.shop;
+  } catch (error) {
+    console.error('Failed to fetch shop info:', error);
+    throw new Error(`Shop info fetch failed: ${error.message}`);
+  }
+};
+
 /**
  * @param {object} admin - The authenticated admin context from Shopify.
  * @param {string} shopDomain - The shop's domain (e.g., 'your-shop.myshopify.com').
  * @returns {Promise<object>} - The shop record from the database.
  */
 
-export const getShopData = async (admin, shopDomain) => {
+export const getShopData = async (admin, shopDomain, checkPlans) => {
   // Define a unique cache key for this specific piece of data.
   const cacheKey = `shop_data_${shopDomain}`;
 
   // 1. Check the cache first.
   const cachedShopData = getCache(cacheKey);
-  if (cachedShopData) {
+  if (cachedShopData && cachedShopData !== null) {
     return cachedShopData;
   }
 
   // 2. If it's a cache miss, proceed with fetching the data.
-  const query = `
-    query getShopInfo {
-      shop {
-        id
-        name
-        email
-      }
-    }
-  `;
-  // Using a retry utility is still a good practice for API calls.
-  const shopInfoResponse = await admin.graphql(query).then(res => res.json()).then(json => json.data.shop);
-
-  if (!shopInfoResponse || !shopInfoResponse.id) {
-    throw new Error('Invalid shop data received from Shopify');
-  }
+  const shopInfoResponse = await getShopID(admin);
 
   const { id: graphqlShopID, name: shopName, email: shopEmail } = shopInfoResponse;
 
@@ -44,11 +75,14 @@ export const getShopData = async (admin, shopDomain) => {
       shopName,
       email: shopEmail || null,
       name: null,
-      subscriptionStatus: { active: true, subId: null },
+      subscriptionStatus: {
+        active: checkPlans?.hasActivePayment ? true : false,
+        subId: checkPlans?.appSubscriptions[ 0 ]?.id || null,
+      },
       categories: { celebrity: true, influencer: true, athlete: true, musician: true },
       alertFrequency: "immediate",
       quietHours: { enabled: false, start: "22:00", end: "08:00" },
-      emailAlerts: false,
+      emailAlerts: true,
       slackAlerts: false,
       webhookAlerts: true,
       inAppAlerts: false,
@@ -58,7 +92,7 @@ export const getShopData = async (admin, shopDomain) => {
   });
 
   // 3. Store the newly fetched data in the cache before returning.
-  setCache(cacheKey, shopRecord);
+  setCache(cacheKey, shopRecord, 1800); // Cache for 30 minutes (1800 seconds)
 
   return shopRecord;
 };
@@ -70,21 +104,18 @@ export const getShopData = async (admin, shopDomain) => {
  */
 export const updateShopRecord = async (admin, data) => {
 
-  const query = `
-    query getShopInfo {
-      shop {
-        id
-      }
-    }
-  `;
-  // Using a retry utility is still a good practice for API calls.
-  const shopInfoResponse = await admin.graphql(query).then(res => res.json()).then(json => json.data.shop);
+  if (!data || !admin) {
+    throw new Error("Invalid data received for admin and data.");
+  };
 
-  if (!shopInfoResponse || !shopInfoResponse.id) {
-    throw new Error('Invalid shop data received from Shopify');
+  let id;
+  if (!data.shopId) {
+    const temp = await getShopID(admin);
+    id = temp.id;
   }
-
-  const { id } = shopInfoResponse;
+  else {
+    id = data.shopId
+  }
 
   const updatedShop = await prisma.Shops.update({
     where: { shopId: id },
@@ -96,3 +127,22 @@ export const updateShopRecord = async (admin, data) => {
 
   return updatedShop;
 };
+
+export const appUninstalled = async (shopName) => {
+  const cacheKey = `shop_data_${shopName}`;
+
+  const updatedShop = await prisma.Shops.update({
+    where: { shopName },
+    data: {
+      subscriptionStatus: {
+        active: false,
+        subId: null,
+      },
+    },
+  });
+  invalidateCache(cacheKey);
+
+  console.log("App has been uninstalled.");
+
+  return;
+}

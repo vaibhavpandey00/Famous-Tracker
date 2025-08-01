@@ -14,6 +14,7 @@ import {
     Mail,
     MessageSquare,
 } from "lucide-react"
+import { useNavigate } from "@remix-run/react"
 
 const features = [
     {
@@ -87,12 +88,17 @@ const faqs = [
 ]
 
 export default function PricingPage() {
-    const [ billingCycle, setBillingCycle ] = useState("monthly")
-    const [ expandedFaq, setExpandedFaq ] = useState(null)
+    const [ expandedFaq, setExpandedFaq ] = useState(null);
+    const navigate = useNavigate();
+
+    const handleSubscribe = () => {
+        // Handle subscription logic here
+        console.log("Subscribing...")
+        navigate("/app/subscribe");
+    }
 
     const monthlyPrice = 10
-    const yearlyPrice = 100 // 20% discount
-    const currentPrice = billingCycle === "monthly" ? monthlyPrice : yearlyPrice
+    const currentPrice = monthlyPrice
 
     const toggleFaq = (index) => {
         setExpandedFaq(expandedFaq === index ? null : index)
@@ -113,29 +119,6 @@ export default function PricingPage() {
                         </p>
                     </div>
 
-                    {/* Billing Toggle */}
-                    <div className="flex items-center justify-center mb-12">
-                        <div className="bg-white p-1 rounded-lg border border-gray-200 flex">
-                            <button
-                                onClick={() => setBillingCycle("monthly")}
-                                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${billingCycle === "monthly" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
-                                    }`}
-                            >
-                                Monthly
-                            </button>
-                            <button
-                                onClick={() => setBillingCycle("yearly")}
-                                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors relative ${billingCycle === "yearly" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
-                                    }`}
-                            >
-                                Yearly
-                                <span className="absolute -top-4 -right-4 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                                    Save 20%
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-
                     {/* Main Pricing Card */}
                     <div className="max-w-lg mx-auto mb-16">
                         <div className="bg-white rounded-2xl shadow-xl border-2 border-blue-200 relative overflow-hidden">
@@ -146,7 +129,7 @@ export default function PricingPage() {
                                 </div>
                             </div>
 
-                            <div className="p-8 pt-12">
+                            <div className="p-8 pt-12 mt-4">
                                 {/* Plan Header */}
                                 <div className="text-center mb-8">
                                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -160,19 +143,18 @@ export default function PricingPage() {
                                 <div className="text-center mb-8">
                                     <div className="flex items-baseline justify-center space-x-2">
                                         <span className="text-5xl font-bold text-gray-900">${currentPrice}</span>
-                                        <span className="text-gray-600">/{billingCycle === "monthly" ? "month" : "year"}</span>
+                                        <span className="text-gray-600">/month</span>
                                     </div>
-                                    {billingCycle === "yearly" && (
-                                        <p className="text-green-600 text-sm mt-2">Save ${monthlyPrice * 12 - yearlyPrice} per year</p>
-                                    )}
-                                    <p className="text-gray-500 text-sm mt-2">Billed {billingCycle}</p>
+                                    <p className="text-gray-500 text-sm mt-2">Billed monthly</p>
                                 </div>
 
                                 {/* CTA Button */}
-                                <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mb-6">
-                                    <span>Subscribe Now</span>
-                                    <ArrowRight className="h-4 w-4" />
-                                </button>
+                                <a>
+                                    <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mb-6" onClick={handleSubscribe}>
+                                        <span>Subscribe Now</span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </a>
 
                                 <p className="text-center text-sm text-gray-500 mb-8">
                                     No credit card required • Cancel anytime • Full access during trial

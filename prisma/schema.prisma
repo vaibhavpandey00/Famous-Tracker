@@ -70,7 +70,7 @@ model Celebs {
 model Shops {
   id                 String        @id @default(auto()) @map("_id") @db.ObjectId
   shopId             String        @unique
-  shopName           String?
+  shopName           String?       @unique
   subscriptionStatus HasActiveSubs
 
   // Personal Information
@@ -91,6 +91,8 @@ model Shops {
   alertFrequency String @default("immediate")
 
   quietHours ShopQuietHours
+
+  termsAccepted Boolean? @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
