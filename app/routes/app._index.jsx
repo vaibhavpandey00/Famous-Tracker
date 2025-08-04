@@ -67,7 +67,7 @@ export const loader = async ({ request }) => {
   try {
     const shopName = session.shop.replace(".myshopify.com", "");
     // console.log("Loader: Attempting to fetch shop data using admin.graphql...");
-    const rawShopData = await getShopData(admin, shopName, checkPlans);
+    const rawShopData = await getShopData(admin, shopName);
     console.log("Loader: Successfully fetched raw shop data.");
 
     const hasCompletedWelcome = rawShopData.termsAccepted;
@@ -175,6 +175,7 @@ export default function Index() {
     }
     if (loaderData && !loaderData.haveActiveSubscription) {
       setFormData({ ...formData, haveActiveSubscription: false });
+      setActiveTab("pricing");
     }
   }, [ loaderData ]);
 
@@ -310,7 +311,7 @@ export default function Index() {
       {/* Pricing */}
       {activeTab === "pricing" && (
         <>
-          <PricingPage />
+          <PricingPage activeSub={formData.haveActiveSubscription} />
         </>
       )}
 

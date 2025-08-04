@@ -3,7 +3,7 @@
 client_id = "65c24964cec15300f4d4e3ccc5930eb6"
 name = "Famous Tracker"
 handle = "famous-tracker"
-application_url = "https://spending-nano-airports-mix.trycloudflare.com"
+application_url = "https://mozilla-equality-twins-attachment.trycloudflare.com"
 embedded = true
 
 [build]
@@ -22,15 +22,15 @@ api_version = "2024-10"
   uri = "/webhooks/app/uninstalled"
 
   [[webhooks.subscriptions]]
-  topic = "orders/create"
-  uri = "/webhooks"
+  topics = [ "orders/create" ]
+  uri = "/webhooks/orders/create"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_orders,read_customers,write_customers,read_products"
 
 [auth]
-redirect_urls = ["https://spending-nano-airports-mix.trycloudflare.com/auth/callback", "https://spending-nano-airports-mix.trycloudflare.com/auth/shopify/callback", "https://spending-nano-airports-mix.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://mozilla-equality-twins-attachment.trycloudflare.com/auth/callback", "https://mozilla-equality-twins-attachment.trycloudflare.com/auth/shopify/callback", "https://mozilla-equality-twins-attachment.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

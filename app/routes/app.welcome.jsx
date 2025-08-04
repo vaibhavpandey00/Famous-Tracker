@@ -3,6 +3,9 @@ import { authenticate } from "../shopify.server";
 import { redirect, useFetcher, useRouteError, isRouteErrorResponse, useLoaderData } from "@remix-run/react";
 import WelcomePage from "../components/WelcomePage";
 import logger from "../utils/logger.client";
+import { Resend } from "resend";
+import { render } from "@react-email/render";
+import WelcomeEmail from "../emails/Welcome";
 
 export const loader = async ({ request }) => {
     const { admin, session, billing } = await authenticate.admin(request);
@@ -20,7 +23,7 @@ export const loader = async ({ request }) => {
 
     try {
         const shopName = session.shop.replace(".myshopify.com", "");
-        const rawShopData = await getShopData(admin, shopName, checkPlans);
+        const rawShopData = await getShopData(admin, shopName);
         console.log("Welcome Loader: Successfully fetched raw shop data.");
 
         delete rawShopData.id;
@@ -45,14 +48,70 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-    const { admin } = await authenticate.admin(request);
+    const { admin, billing } = await authenticate.admin(request);
 
-    const data = await request.json();
+    // Check whether the store has an active subscription
+    const checkPlans = await billing.check();
+    const haveActiveSubscription = checkPlans.hasActivePayment || false;
+    const subscriptionId = checkPlans.appSubscriptions?.[ 0 ]?.id || null;
+
+    let data = await request.json();
+    data.subscriptionStatus = { active: haveActiveSubscription, subId: subscriptionId };
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { updateShopRecord } = await import("../utils/shopUtils.server");
 
     try {
         await updateShopRecord(admin, data);
+
+        const userName = data.name || "there";
+        const recipientEmail = data.email;
+
+        const selectedCategories = Object.keys(data.categories)
+            .filter(key => data.categories[ key ])
+            .map(key => key.charAt(0).toUpperCase() + key.slice(1));
+
+        const setupData = {
+            minimumOrderValue: data.minimumOrderValue,
+            minimumFollowers: data.minimumFollowers,
+            categories: selectedCategories,
+            alertChannels: [ "Email", "In-App" ],
+        }
+
+        if (!recipientEmail) {
+            return json({ error: "Email address is required." }, { status: 400 });
+        }
+        const emailHtml = await render(WelcomeEmail({ userName, setupData }));
+
+        // Additional safety check to ensure emailHtml is a string
+        if (typeof emailHtml !== 'string') {
+            console.error("Rendered email HTML is not a string:", typeof emailHtml);
+            return json({ success: false, error: "Failed to render email template." }, { status: 500 });
+        }
+
+        const { error } = await resend.emails.send({
+            from: "Famous Tracker <noreply@famoustracker.io>",
+            to: [ recipientEmail ],
+            subject: "Welcome to Famous Tracker - Get Started with Celebrity Insights",
+            html: emailHtml,
+            headers: {
+                'X-Entity-Ref-ID': `welcome-${Date.now()}`,
+                'List-Unsubscribe': '<https://famoustracker.io/unsubscribe>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+            tags: [
+                { name: 'category', value: 'welcome' },
+                { name: 'environment', value: process.env.NODE_ENV || 'development' }
+            ],
+        });
+
+        if (error) {
+            console.error("Resend error:", error);
+            return json({ success: false, error: "Failed to send email." }, { status: 500 });
+        }
+        console.log("Email sent successfully ✅");
+
         return redirect("/app");
     } catch (error) {
         console.error("Error updating shop data:", error);

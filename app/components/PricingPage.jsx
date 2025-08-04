@@ -15,6 +15,7 @@ import {
     MessageSquare,
 } from "lucide-react"
 import { useNavigate } from "@remix-run/react"
+import logger from "../utils/logger.client"
 
 const features = [
     {
@@ -87,13 +88,14 @@ const faqs = [
     },
 ]
 
-export default function PricingPage() {
+export default function PricingPage({ activeSub }) {
     const [ expandedFaq, setExpandedFaq ] = useState(null);
     const navigate = useNavigate();
 
     const handleSubscribe = () => {
         // Handle subscription logic here
-        console.log("Subscribing...")
+        logger.log("Subscribing...");
+        if (activeSub) return;
         navigate("/app/subscribe");
     }
 
@@ -150,8 +152,17 @@ export default function PricingPage() {
 
                                 {/* CTA Button */}
                                 <a>
-                                    <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mb-6" onClick={handleSubscribe}>
-                                        <span>Subscribe Now</span>
+                                    <button
+                                        className={`w-full text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105                                           flex items-center justify-center space-x-2 mb-6
+                                            ${activeSub
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                            }
+                                        `}
+                                        onClick={handleSubscribe}
+                                        disabled={activeSub}
+                                    >
+                                        <span>{activeSub ? "Subscribed" : "Subscribe Now"}</span>
                                         <ArrowRight className="h-4 w-4" />
                                     </button>
                                 </a>
@@ -239,7 +250,5 @@ export default function PricingPage() {
             </div>
 
         </div>
-
-
     )
 }

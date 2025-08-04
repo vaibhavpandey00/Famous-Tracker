@@ -52,7 +52,7 @@ const getShopID = async (admin) => {
  * @returns {Promise<object>} - The shop record from the database.
  */
 
-export const getShopData = async (admin, shopDomain, checkPlans) => {
+export const getShopData = async (admin, shopDomain) => {
   // Define a unique cache key for this specific piece of data.
   const cacheKey = `shop_data_${shopDomain}`;
 
@@ -67,32 +67,44 @@ export const getShopData = async (admin, shopDomain, checkPlans) => {
 
   const { id: graphqlShopID, name: shopName, email: shopEmail } = shopInfoResponse;
 
-  const shopRecord = await prisma.Shops.upsert({
+  let shopRecord;
+
+  shopRecord = await prisma.Shops.findUnique({
     where: { shopId: graphqlShopID },
-    update: { shopName, email: shopEmail || null },
-    create: {
+  });
+
+  if (!shopRecord) {
+    // If the record doesn't exist, create a new one.
+    shopRecord = await createShopRecord(shopInfoResponse);
+  }
+
+  // 3. Store the newly fetched data in the cache before returning.
+  setCache(cacheKey, shopRecord, 1800); // Cache for 30 minutes (1800 seconds)
+
+  return shopRecord;
+};
+
+const createShopRecord = async (shopInfoResponse) => {
+  const { id: graphqlShopID, name: shopName, email: shopEmail } = shopInfoResponse;
+
+  const shopRecord = await prisma.Shops.create({
+    data: {
       shopId: graphqlShopID,
       shopName,
       email: shopEmail || null,
       name: null,
-      subscriptionStatus: {
-        active: checkPlans?.hasActivePayment ? true : false,
-        subId: checkPlans?.appSubscriptions[ 0 ]?.id || null,
-      },
+      subscriptionStatus: { active: false, subId: null },
       categories: { celebrity: true, influencer: true, athlete: true, musician: true },
       alertFrequency: "immediate",
       quietHours: { enabled: false, start: "22:00", end: "08:00" },
       emailAlerts: true,
       slackAlerts: false,
       webhookAlerts: true,
-      inAppAlerts: false,
+      inAppAlerts: true,
       minimumOrderValue: 0,
       minimumFollowers: 0,
     },
   });
-
-  // 3. Store the newly fetched data in the cache before returning.
-  setCache(cacheKey, shopRecord, 1800); // Cache for 30 minutes (1800 seconds)
 
   return shopRecord;
 };
