@@ -2,17 +2,9 @@ import { json } from "@remix-run/node";
 import { Form, useActionData, useNavigation } from "@remix-run/react";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
+import AlertEmail from "../emails/AlertEmail";
 
-// Make sure this import path is correct
-import WelcomeEmail from "../emails/Welcome";
-
-// SERVER-SIDE ACTION
 export const action = async ({ request }) => {
-    if (!WelcomeEmail) {
-        console.error("Failed to import WelcomeEmail component. Check the file path and export.");
-        return json({ success: false, error: "Email template not found on the server." }, { status: 500 });
-    }
-
     const resend = new Resend(process.env.RESEND_API_KEY);
     const formData = await request.formData();
     const recipientEmail = formData.get("email");
@@ -23,31 +15,40 @@ export const action = async ({ request }) => {
     }
 
     try {
-        // Fix: Await the render function and ensure it returns a string
-        const emailHtml = await render(WelcomeEmail({ userName }));
+        const emailHtml = await render(AlertEmail({ userName }));
 
-        // Additional safety check to ensure emailHtml is a string
         if (typeof emailHtml !== 'string') {
             console.error("Rendered email HTML is not a string:", typeof emailHtml);
             return json({ success: false, error: "Failed to render email template." }, { status: 500 });
         }
 
-        console.log("Rendered email HTML length:", emailHtml.length);
-
         const { data, error } = await resend.emails.send({
-            from: "Famous Tracker <noreply@famoustracker.io>",
+            from: "Famous Tracker <notifications@famoustracker.io>",
             to: [ recipientEmail ],
-            subject: "Welcome to Famous Tracker - Get Started with Celebrity Insights",
+
+            subject: `New purchase notification from Famous Tracker`,
+
             html: emailHtml,
+            text: generatePlainTextVersion(userName),
+
+            // IMPROVED: Essential headers only
             headers: {
-                'X-Entity-Ref-ID': `welcome-${Date.now()}`,
-                'List-Unsubscribe': '<https://famoustracker.io/unsubscribe>',
+                'X-Entity-Ref-ID': `purchase-${Date.now()}`,
+                'List-Unsubscribe': '<mailto:unsubscribe@famoustracker.io>',
                 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                'Return-Path': 'notifications@famoustracker.io',
+                'Reply-To': 'support@famoustracker.io',
             },
+
             tags: [
-                { name: 'category', value: 'welcome' },
-                { name: 'environment', value: process.env.NODE_ENV || 'development' }
+                { name: 'type', value: 'notification' },
+                { name: 'category', value: 'purchase' }
             ],
+
+            metadata: {
+                'notification_type': 'purchase',
+                'sent_at': new Date().toISOString()
+            }
         });
 
         if (error) {
@@ -56,12 +57,52 @@ export const action = async ({ request }) => {
         }
 
         console.log("Email sent successfully:", data);
-        return json({ success: true, message: `Test email sent to ${recipientEmail}!` });
+        return json({
+            success: true,
+            message: `Purchase notification sent to ${recipientEmail}!`,
+            emailId: data.id
+        });
+
     } catch (exception) {
         console.error("Server error:", exception);
         return json({ success: false, error: "An unexpected error occurred." }, { status: 500 });
     }
 };
+
+// IMPROVED: Natural plain text version
+function generatePlainTextVersion(userName) {
+    return `Hi ${userName},
+
+You have a new purchase notification from Famous Tracker.
+
+Customer Details:
+Name: Emma Stone
+Email: e.stone@email.com
+Purchase: Organic Face Serum & Vitamin C Cleanser Bundle
+Amount: $156.99
+
+This customer falls into the celebrity category, which may present partnership opportunities.
+
+Recommendations:
+1. Consider reaching out for a product review
+2. Explore potential collaboration opportunities
+3. Offer exclusive access to new products
+
+Best practices for outreach:
+- Contact within 24 hours for better response rates
+- Reference their specific purchase
+- Keep initial messages brief and personal
+- Focus on providing value first
+
+Sample message:
+"Hi Emma, thank you for choosing our Organic Face Serum Bundle! I'd love to hear your thoughts on the products. Would you be interested in sharing a quick review? I'd be happy to send you something from our upcoming collection as a thank you."
+
+---
+Famous Tracker
+Support: support@famoustracker.io
+Unsubscribe: https://famoustracker.io/unsubscribe
+`;
+}
 
 // UI COMPONENT
 export default function SendTestEmailPage() {

@@ -3,7 +3,7 @@
 client_id = "65c24964cec15300f4d4e3ccc5930eb6"
 name = "Famous Tracker"
 handle = "famous-tracker"
-application_url = "https://mozilla-equality-twins-attachment.trycloudflare.com"
+application_url = "https://const-rebound-dragon-fails.trycloudflare.com"
 embedded = true
 
 [build]
@@ -30,7 +30,7 @@ api_version = "2024-10"
 scopes = "read_orders,read_customers,write_customers,read_products"
 
 [auth]
-redirect_urls = ["https://mozilla-equality-twins-attachment.trycloudflare.com/auth/callback", "https://mozilla-equality-twins-attachment.trycloudflare.com/auth/shopify/callback", "https://mozilla-equality-twins-attachment.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://const-rebound-dragon-fails.trycloudflare.com/auth/callback", "https://const-rebound-dragon-fails.trycloudflare.com/auth/shopify/callback", "https://const-rebound-dragon-fails.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

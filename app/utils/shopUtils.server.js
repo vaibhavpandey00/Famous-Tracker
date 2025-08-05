@@ -140,6 +140,25 @@ export const updateShopRecord = async (admin, data) => {
   return updatedShop;
 };
 
+// Functions only for webhooks related activity
+export const webhookShopData = async (shopName) => {
+  const cacheKey = `shop_data_${shopName}`;
+
+  const cachedShopData = getCache(cacheKey);
+  if (cachedShopData && cachedShopData !== null) {
+    return cachedShopData;
+  }
+
+  const shopRecord = await prisma.Shops.findUnique({
+    where: { shopName },
+  });
+
+  setCache(cacheKey, shopRecord, 1800); // Cache for 30 minutes (1800 seconds)
+
+  console.log("Webhook Shop Data:", shopRecord);
+  return shopRecord;
+}
+
 export const appUninstalled = async (shopName) => {
   const cacheKey = `shop_data_${shopName}`;
 
