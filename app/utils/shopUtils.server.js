@@ -153,18 +153,24 @@ export const webhookShopData = async (shopName) => {
     where: { shopName },
   });
 
-  setCache(cacheKey, shopRecord, 1800); // Cache for 30 minutes (1800 seconds)
+  if (shopRecord && shopRecord.shopId && shopRecord.shopName) {
 
-  console.log("Webhook Shop Data:", shopRecord);
-  return shopRecord;
+    console.log("Valide Shop Data: ", !!shopRecord);
+    setCache(cacheKey, shopRecord, 1800);
+
+    return shopRecord;
+  }
+
+  return null;
 }
 
 export const appUninstalled = async (shopName) => {
   const cacheKey = `shop_data_${shopName}`;
 
-  const updatedShop = await prisma.Shops.update({
+  await prisma.Shops.update({
     where: { shopName },
     data: {
+      termsAccepted: false,
       subscriptionStatus: {
         active: false,
         subId: null,

@@ -33,14 +33,14 @@ const QuickActions = ({ formData, setFormData, handleFormSubmit }) => {
             bgColor: "bg-purple-50 hover:bg-purple-100",
             component: ViewAnalytics,
         },
-        {
-            id: "integrations",
-            title: "Integration Settings",
-            icon: Settings,
-            color: "text-orange-600",
-            bgColor: "bg-orange-50 hover:bg-orange-100",
-            component: IntegrationSettings,
-        },
+        // {
+        //     id: "integrations",
+        //     title: "Integration Settings",
+        //     icon: Settings,
+        //     color: "text-orange-600",
+        //     bgColor: "bg-orange-50 hover:bg-orange-100",
+        //     component: IntegrationSettings,
+        // },
     ]
 
     const openModal = (actionId) => {

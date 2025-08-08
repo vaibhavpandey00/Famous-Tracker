@@ -1,8 +1,5 @@
 import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { Resend } from "resend";
-import { render } from "@react-email/render";
-import AlertEmail from "../emails/AlertEmail";
 
 export const action = async ({ request }) => {
     // Renamed loader to action to handle POST requests
@@ -15,71 +12,71 @@ export const action = async ({ request }) => {
 
     const { webhookShopData } = await import("../utils/shopUtils.server");
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const shopName = shop.replace(".myshopify.com", "");
-
-    console.log(`✅ Received ${topic} webhook for ${shop} with ID: ${webhookId}`);
     const formattedData = formatShopifyOrder(payload);
     // console.log(`📦 Order payload: ${JSON.stringify(formattedData, null, 2)}`);
 
     let shopDataDb;
     try {
         shopDataDb = await webhookShopData(shopName);
-        const { name: userName, email: userEmail, categories, emailAlerts, slackAlerts, inAppAlerts } = shopDataDb;
+
+        if (shopDataDb === null) {
+            console.log("Shop data is null. No action taken.");
+            return new Response("Shop data is null. No action taken.", { status: 200 });
+        }
+
+        // Check if the store/shop has an active subscription
+        if (shopDataDb.subscriptionStatus.active === false) {
+            console.log("Subscription is inactive. No action taken.");
+            return new Response("Subscription is inactive. No action taken.", { status: 200 });
+        }
+
+        const { name: userName, email: userEmail, categories, minimumOrderValue, minimumFollowers, emailAlerts, slackAlerts, inAppAlerts } = shopDataDb;
 
         // console.log("----- Shop Data -----");
         // console.log("Name: ", userName);
         // console.log("Email: ", userEmail);
         // console.log("Categories: ", categories);
+        // console.log("Minimum Order Value: ", minimumOrderValue);
+        // console.log("Minimum Followers: ", minimumFollowers);
         // console.log("Email Alert: ", emailAlerts);
         // console.log("Slack Alert: ", slackAlerts);
         // console.log("In-App Alert: ", inAppAlerts);
 
-        if (!userEmail) {
-            console.log("Email is not set for this shop. No email will be sent.");
+        if (formattedData.spent < minimumOrderValue) {
+            console.log("Order value is below the minimum threshold. No alert will be sent.");
+            return new Response("Order value is below the minimum threshold. No alert will be sent.", { status: 200 });
         }
+
+        const { sendOrderAlertEmail } = await import("../utils/orderCreate.server")
+        const { findCelebMatch, doCategoriesMatch } = await import("../utils/matchCeleb.server");
+
+        // Check if the Celeb has a match in the DB
+        const celebMatch = await findCelebMatch(formattedData.customerName);
+
+        if (!celebMatch || celebMatch === null) {
+            console.log("No celeb match found. No alert will be sent.");
+            return new Response("No celeb match found. No alert will be sent.", { status: 200 });
+        }
+
+        // Destructure the celebMatch object
+        const { fullName, celebCategory, maxFollower, socials, note } = celebMatch;
+
+        if (maxFollower < minimumFollowers) {
+            console.log("Celeb has fewer followers than the minimum threshold. No alert will be sent.");
+            return new Response("Celeb has fewer followers than the minimum threshold. No alert will be sent.", { status: 200 });
+        }
+
+        // It checks if the celeb's categories match the user's enabled alert settings
+        const categoryMatch = doCategoriesMatch(categories, celebCategory);
+
+        if (!categoryMatch) {
+            console.log("Categories do not match. No alert will be sent.");
+            return new Response("Categories do not match. No alert will be sent.", { status: 200 });
+        }
+
         if (userEmail && emailAlerts) {
-            const emailHtml = await render(AlertEmail({ userName, customerName: formattedData.customerName, customerEmail: formattedData.customerEmail, products: formattedData.products, spent: formattedData.spent, createdAt: formattedData.createdAt }));
-
-            if (typeof emailHtml !== 'string') {
-                console.error("Rendered email HTML is not a string:", typeof emailHtml);
-                return json({ success: false, error: "Failed to render email template." }, { status: 500 });
-            }
-
-            const { data, error } = await resend.emails.send({
-                from: "Famous Tracker <notifications@famoustracker.io>",
-                to: [ userEmail ],
-
-                subject: `New purchase notification from Famous Tracker`,
-
-                html: emailHtml,
-                text: generatePlainTextVersion(userName, formattedData.customerName, formattedData.customerEmail, formattedData.products, formattedData.spent),
-
-                // IMPROVED: Essential headers only
-                headers: {
-                    'X-Entity-Ref-ID': `purchase-${Date.now()}`,
-                    'List-Unsubscribe': '<mailto:unsubscribe@famoustracker.io>',
-                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-                    'Return-Path': 'notifications@famoustracker.io',
-                    'Reply-To': 'support@famoustracker.io',
-                },
-
-                tags: [
-                    { name: 'type', value: 'notification' },
-                    { name: 'category', value: 'purchase' }
-                ],
-
-                metadata: {
-                    'notification_type': 'purchase',
-                    'sent_at': new Date().toISOString()
-                }
-            });
-
-            if (error) {
-                console.error("Resend error:", error);
-                return json({ success: false, error: "Failed to send email." }, { status: 500 });
-            }
-            console.log("Email sent successfully:", data);
+            await sendOrderAlertEmail(userName, userEmail, celebCategory, formattedData.customerName, fullName, formattedData.customerEmail, formattedData.products, formattedData.spent, formattedData.createdAt, note);
         }
 
     } catch (error) {
@@ -148,38 +145,4 @@ function formatShopifyOrder(payload) {
     };
 
     return cleanData;
-}
-
-function generatePlainTextVersion(userName, customerName, customerEmail, products, spent) {
-    return `Hi ${userName},
-
-You have a new purchase notification from Famous Tracker.
-
-Customer Details:
-Name: ${customerName}
-Email: ${customerEmail}
-Purchase: ${products.join(', ')}
-Amount: $${spent}
-
-This customer falls into the celebrity category, which may present partnership opportunities.
-
-Recommendations:
-1. Consider reaching out for a product review
-2. Explore potential collaboration opportunities
-3. Offer exclusive access to new products
-
-Best practices for outreach:
-- Contact within 24 hours for better response rates
-- Reference their specific purchase
-- Keep initial messages brief and personal
-- Focus on providing value first
-
-Sample message:
-"Hi Emma, thank you for choosing our ${products.join(', ')}! I'd love to hear your thoughts on the products. Would you be interested in sharing a quick review? I'd be happy to send you something from our upcoming collection as a thank you."
-
----
-Famous Tracker
-Support: support@famoustracker.io
-Unsubscribe: https://famoustracker.io/unsubscribe
-`;
 }

@@ -101,15 +101,7 @@ const stats = [
         changeType: "positive",
         icon: TrendingUp,
         period: "Celebrity orders",
-    },
-    {
-        title: "Response Rate",
-        value: "68%",
-        change: "-3%",
-        changeType: "negative",
-        icon: Bell,
-        period: "Outreach success",
-    },
+    }
 ]
 
 const integrations = [
@@ -179,7 +171,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
 
                 {/* Stats Grid */}
                 <ErrorComponents name={"Stats Grid"}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                         {stats.map((stat, index) => (
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                                 <div className="flex items-center justify-between">
@@ -316,7 +308,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                         </ErrorComponents>
 
                         {/* Integration Status */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <ErrorComponents name="Integration Status">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Integration Status</h3>
                                 <div className="space-y-3">
@@ -336,7 +328,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                     ))}
                                 </div>
                             </ErrorComponents>
-                        </div>
+                        </div> */}
 
                         {/* Recent Activity */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

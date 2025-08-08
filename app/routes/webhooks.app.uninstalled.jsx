@@ -7,7 +7,6 @@ export const action = async ({ request }) => {
   console.log(`Received ${topic} webhook for ${shop}`);
 
   if (session) {
-    console.log("Uninstalling app...");
     const shopName = session.shop.replace(".myshopify.com", "");
     await appUninstalled(shopName);
   }

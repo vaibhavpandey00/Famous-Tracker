@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -39,63 +36,53 @@ type Social {
   followers Int?
 }
 
-// Define an embedded type for Address
-type Address {
-  street  String?
-  city    String?
-  state   String?
-  zipCode String?
-  country String?
+model GlobalCelebrity {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName       String
+  normalizedName String   @unique
+  categories     String[]
+  socials        Social[]
+  maxFollower    String?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([categories])
+  @@index([fullName])
 }
 
-model Celebs {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  fullName    String
-  email       String   @unique // Index: Unique index on email
-  phone       String?
-  address     Address?
-  categories  String[]
-  socials     Social[]
-  maxFollower String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// A CUSTOM watchlist item. This belongs to ONE store.
+model CustomWatchlistItem {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  normalizedName String
+  category       String? @default("Custom")
+  shopId         String  @db.ObjectId
+  store          Shops   @relation(fields: [shopId], references: [id])
 
-  @@index([categories]) // Index: For fast lookup by category
-  @@index([fullName]) // Index: For fast lookup by full name
-  @@index([socials.platform]) // Index: For querying by social platform
-  @@index([socials.followers]) // Index: For querying by follower count
+  @@unique([shopId, name])
 }
 
 model Shops {
-  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
-  shopId             String        @unique
-  shopName           String?       @unique
+  id                 String                @id @default(auto()) @map("_id") @db.ObjectId
+  shopId             String                @unique
+  shopName           String?               @unique
   subscriptionStatus HasActiveSubs
-
-  // Personal Information
-  name  String?
-  email String? @unique
-
-  // Alert Channels
-  emailAlerts   Boolean @default(false)
-  slackAlerts   Boolean @default(false)
-  webhookAlerts Boolean @default(true)
-  inAppAlerts   Boolean @default(false)
-
-  minimumOrderValue Int @default(0)
-  minimumFollowers  Int @default(0)
-
-  categories ShopCategories
-
-  alertFrequency String @default("immediate")
-
-  quietHours ShopQuietHours
-
-  termsAccepted Boolean? @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name               String?
+  email              String?               @unique
+  emailAlerts        Boolean               @default(false)
+  slackAlerts        Boolean               @default(false)
+  webhookAlerts      Boolean               @default(true)
+  inAppAlerts        Boolean               @default(false)
+  minimumOrderValue  Int                   @default(1)
+  minimumFollowers   Int                   @default(100)
+  categories         ShopCategories
+  alertFrequency     String                @default("immediate")
+  quietHours         ShopQuietHours
+  termsAccepted      Boolean?              @default(false)
+  customWatchlist    CustomWatchlistItem[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 }
 
 type HasActiveSubs {

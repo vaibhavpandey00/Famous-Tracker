@@ -440,65 +440,118 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                                 <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
                                     <FileText className="h-8 w-8 text-purple-600" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Terms & Conditions</h2>
-                                <p className="text-gray-600">Please review and accept our terms of service</p>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Terms & Conditions
+                                </h2>
+                                <p className="text-gray-600">
+                                    Please review and accept our terms of service
+                                </p>
                             </div>
 
                             <div className="max-w-3xl mx-auto">
                                 <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200 mb-6">
                                     <div className="prose prose-sm max-w-none">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Nova-Famous Tracker Terms of Service</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                            Nova-Famous Tracker Terms of Service
+                                        </h3>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">1. Service Description</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            1. Service Description
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            Nova-Famous Tracker provides celebrity and influencer purchase detection services for e-commerce
-                                            stores. Our service monitors customer data to identify potential celebrity purchases and provides
-                                            real-time alerts.
+                                            Nova-Famous Tracker ("the Service") provides celebrity and
+                                            influencer purchase detection services for e-commerce stores. Our
+                                            service monitors customer data to identify potential celebrity
+                                            purchases and provides real-time alerts.
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">2. Data Privacy & Security</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            2. Data Privacy & Security
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            We are committed to protecting your customer data. All data is encrypted in transit and at rest.
-                                            We comply with GDPR, CCPA, and other applicable privacy regulations. Customer data is never shared
-                                            with third parties without explicit consent.
+                                            We are committed to protecting your customer data. All data is
+                                            encrypted in transit and at rest. We comply with GDPR, CCPA, and
+                                            other applicable privacy regulations. We strictly adhere to{" "}
+                                            <strong>
+                                                Shopify's policies regarding the access and use of Protected
+                                                Customer Data
+                                            </strong>{" "}
+                                            and will not use this data for any purpose other than providing
+                                            the described Service. Customer data is never shared with third
+                                            parties without explicit consent.
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">3. Service Availability</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            3. Service Availability
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            We strive to maintain 99.9% uptime for our service. Scheduled maintenance will be announced in
-                                            advance. We are not liable for any business losses due to service interruptions.
+                                            We strive to maintain 99.9% uptime for our service. Scheduled
+                                            maintenance will be announced in advance. We are not liable for
+                                            any business losses due to service interruptions.
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">4. Acceptable Use</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            4. Disclaimer of Accuracy
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            You agree to use our service only for legitimate business purposes. You will not attempt to
-                                            reverse engineer, hack, or abuse our service. Any misuse may result in immediate account
+                                            The Service utilizes automated processes to match customer
+                                            information with public data of influencers and celebrities.
+                                            While we strive for high accuracy, these "Follower matches" and
+                                            "Match alerts" are provided for informational purposes only and{" "}
+                                            <strong>are not guaranteed to be accurate</strong>. You are solely
+                                            responsible for verifying the details of any customer identified
+                                            by the Service before taking any action.
+                                        </p>
+
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            5. Acceptable Use
+                                        </h4>
+                                        <p className="text-gray-700 mb-4">
+                                            You agree to use our service only for legitimate business
+                                            purposes. You will not attempt to reverse engineer, hack, or abuse
+                                            our service. Any misuse may result in immediate account
                                             termination.
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">5. Billing & Cancellation</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            6. Billing & Cancellation
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            Subscription fees are billed monthly or annually as selected. You may cancel your subscription at
-                                            any time. Refunds are provided on a pro-rated basis for annual subscriptions cancelled within 30
-                                            days.
+                                            Subscription fees are billed monthly or annually as selected. You
+                                            may cancel your subscription at any time.{" "}
+                                            <strong>
+                                                Uninstalling the app from your Shopify store will be considered
+                                                a cancellation request. This action automatically cancels your
+                                                subscription and initiates the permanent deletion of your store
+                                                data from our systems in accordance with our data retention
+                                                policy.
+                                            </strong>
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">6. Limitation of Liability</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            7. Limitation of Liability
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            Our liability is limited to the amount paid for our service in the preceding 12 months. We are not
-                                            responsible for any indirect, incidental, or consequential damages.
+                                            Our liability is limited to the amount paid for our service in the
+                                            preceding 12 months. We are not responsible for any indirect,
+                                            incidental, or consequential damages arising from the use or
+                                            inability to use the Service, including any inaccuracies in the
+                                            data provided.
                                         </p>
 
-                                        <h4 className="font-medium text-gray-900 mb-2">7. Changes to Terms</h4>
+                                        <h4 className="font-medium text-gray-900 mb-2">
+                                            8. Changes to Terms
+                                        </h4>
                                         <p className="text-gray-700 mb-4">
-                                            We may update these terms from time to time. Users will be notified of significant changes via
-                                            email. Continued use of the service constitutes acceptance of updated terms.
+                                            We may update these terms from time to time. Users will be
+                                            notified of significant changes via email. Continued use of the
+                                            service constitutes acceptance of updated terms.
                                         </p>
 
                                         <p className="text-gray-600 text-sm mt-6">
-                                            Last updated: January 2024
+                                            Last updated: August 2025
                                             <br />
-                                            For questions, contact us at legal@nova-famous.com
+                                            For questions, contact us at lega@famoustracker.io
                                         </p>
                                     </div>
                                 </div>
@@ -512,11 +565,17 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                                         className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
                                     />
                                     <label htmlFor="terms" className="text-sm text-gray-700">
-                                        I have read and agree to the <span className="font-medium text-blue-600">Terms & Conditions</span>{" "}
-                                        and <span className="font-medium text-blue-600">Privacy Policy</span>
+                                        I have read and agree to the{" "}
+                                        <span className="font-medium text-blue-600">
+                                            Terms & Conditions
+                                        </span>{" "}
+                                        and{" "}
+                                        <span className="font-medium text-blue-600">Privacy Policy</span>
                                     </label>
                                 </div>
-                                {errors.termsAccepted && <p className="text-red-600 text-sm mt-2">{errors.termsAccepted}</p>}
+                                {errors.termsAccepted && (
+                                    <p className="text-red-600 text-sm mt-2">{errors.termsAccepted}</p>
+                                )}
                             </div>
                         </div>
                     )}

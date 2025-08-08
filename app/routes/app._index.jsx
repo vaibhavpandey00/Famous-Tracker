@@ -1,16 +1,16 @@
 import { json, useFetcher, useLoaderData } from "@remix-run/react";
 import { TitleBar } from "@shopify/app-bridge-react";
-import {
-  Banner,
-  Button,
-  Text
-} from "@shopify/polaris";
+import { Text } from "@shopify/polaris";
+import { Crown } from "lucide-react";
 import { useEffect, useState } from "react";
+import CriticalBanner from "../components/CriticalBanner";
 import Home from "../components/Home";
 import PricingPage from "../components/PricingPage";
 import { authenticate } from "../shopify.server";
 import { useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import logger from "../utils/logger.client";
+import { hasDataChanged, getChangedFields } from "../utils/indexUtils.client";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
   console.log("Loader: Starting authentication process...");
@@ -18,12 +18,8 @@ export const loader = async ({ request }) => {
   const { admin, session, billing } = await authenticate.admin(request);
 
   console.log("Loader: Authentication attempt completed.");
-  console.log("Session exists:", !!session);
 
-  if (session) {
-    console.log("Session ID:", session.id);
-    console.log("Access Token present:", !!session.accessToken ? "YES" : "NO");
-  } else {
+  if (!session || !session.accessToken) {
     console.warn("Loader: No session object found after authenticate.admin. This might indicate an issue or a pending redirect.");
     throw new Error("Authentication failed: No session available. Please try reinstalling the app.");
   }
@@ -34,31 +30,31 @@ export const loader = async ({ request }) => {
   }
 
   let checkPlans;
-  let hasActiveSubscription = false;
+  let haveActiveSubscription = false;
   let subscriptionId = null;
 
   try {
     // This is the line that's failing
     checkPlans = await billing.check();
-    hasActiveSubscription = checkPlans.hasActivePayment;
+    haveActiveSubscription = checkPlans.hasActivePayment;
     subscriptionId = checkPlans.appSubscriptions[ 0 ]?.id;
   } catch (error) {
     console.error("Failed to check billing:", error.message);
-    hasActiveSubscription = false;
+    haveActiveSubscription = false;
     throw error;
   }
 
-  console.log("Loader: hasActiveSubscription:", hasActiveSubscription);
+  // console.log("Loader: haveActiveSubscription:", haveActiveSubscription);
 
-  // if (hasActiveSubscription) {
+  // if (haveActiveSubscription) {
   //   await billing.cancel({
   //     subscriptionId: subscriptionId,
   //     isTest: true
   //   })
   // }
 
-  if (!hasActiveSubscription) {
-    const dataToSend = { haveActiveSubscription: hasActiveSubscription };
+  if (!haveActiveSubscription) {
+    const dataToSend = { haveActiveSubscription };
     return dataToSend;
   }
 
@@ -78,7 +74,7 @@ export const loader = async ({ request }) => {
 
     const modifiedShopData = { ...rawShopData };
 
-    modifiedShopData.haveActiveSubscription = hasActiveSubscription;
+    modifiedShopData.haveActiveSubscription = haveActiveSubscription;
 
     delete modifiedShopData.id;
     delete modifiedShopData.shopId;
@@ -96,7 +92,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  // const { addCeleb } = await import("../utils/addCelebs");
+  const { uploadCelebsToDB } = await import("../utils/seedDatabase");
   const { updateShopRecord } = await import("../utils/shopUtils.server");
   const { admin } = await authenticate.admin(request);
 
@@ -112,6 +108,7 @@ export const action = async ({ request }) => {
 
     case "createCelebRecord":
       console.log("Creating Celeb Record...");
+      await uploadCelebsToDB(prisma);
       break;
 
     default:
@@ -179,80 +176,17 @@ export default function Index() {
     }
   }, [ loaderData ]);
 
-  // Deep comparison function
-  const deepEqual = (obj1, obj2) => {
-    if (obj1 === obj2) return true;
-
-    if (obj1 == null || obj2 == null) return false;
-
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
-      return obj1 === obj2;
-    }
-
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) return false;
-
-    for (let key of keys1) {
-      if (!keys2.includes(key)) return false;
-      if (!deepEqual(obj1[ key ], obj2[ key ])) return false;
-    }
-
-    return true;
-  };
-
-  // Function to check if data has changed
-  const hasDataChanged = () => {
-    if (!originalData) return true; // If no original data, allow submission
-
-    const currentData = { ...formData };
-    delete currentData.haveActiveSubscription;
-
-    return !deepEqual(originalData, currentData);
-  };
-
-  // Function to get changed fields (optional - for debugging/logging)
-  // const getChangedFields = () => {
-  //   if (!originalData) return {};
-
-  //   const currentData = { ...formData };
-  //   delete currentData.haveActiveSubscription;
-
-  //   const changes = {};
-  //   const findChanges = (original, current, path = '') => {
-  //     for (const key in current) {
-  //       const currentPath = path ? `${path}.${key}` : key;
-
-  //       if (typeof current[ key ] === 'object' && current[ key ] !== null && !Array.isArray(current[ key ])) {
-  //         if (typeof original[ key ] === 'object' && original[ key ] !== null) {
-  //           findChanges(original[ key ], current[ key ], currentPath);
-  //         } else {
-  //           changes[ currentPath ] = { from: original[ key ], to: current[ key ] };
-  //         }
-  //       } else if (original[ key ] !== current[ key ]) {
-  //         changes[ currentPath ] = { from: original[ key ], to: current[ key ] };
-  //       }
-  //     }
-  //   };
-
-  //   findChanges(originalData, currentData);
-  //   return changes;
-  // };
-
   const handleFormSubmit = (getAction) => {
     logger.log("Form submit requested...");
 
     // Check if data has changed
-    if (!hasDataChanged()) {
+    if (!hasDataChanged(originalData, formData)) {
       logger.log("No changes detected, skipping submission");
       return;
     }
 
-    logger.log("Changes detected, submitting form...");
-
     //Log what changed for debugging
-    // const changedFields = getChangedFields();
+    // const changedFields = getChangedFields(originalData, formData);
     // logger.log("Changed fields:", changedFields);
 
     const dataToUpdate = { ...formData };
@@ -269,14 +203,14 @@ export default function Index() {
     });
   };
 
-  return (
+  return (<>
     <div className="flex flex-col items-center ">
       {/* Title bar */}
       <TitleBar title="Famous Tracker" />
 
       {/* Toggle tab home and pricing */}
       <div
-        className="flex w-[70%] items-center justify-between mb-3 space-x-4">
+        className="flex w-full lg:w-[70%] items-center justify-between mb-3 space-x-4">
 
         <Text as="h2" variant="headingLg">/ {activeTab === "home" ? "Dashboard" : "Pricing"}</Text>
 
@@ -296,17 +230,21 @@ export default function Index() {
 
       </div>
 
-      {/* Home */}
-      {activeTab === "home" && formData.haveActiveSubscription && (<Home formData={formData} setFormData={setFormData} handleFormSubmit={handleFormSubmit} />
-      )}
+      {/* Seed Database */}
+      {/* <button
+        onClick={() => handleFormSubmit("createCelebRecord")}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Seed Databse...
+      </button> */}
 
       {/* For no active subscription */}
       {activeTab === "home" && !formData.haveActiveSubscription && <>
-        <Banner title="You have no active subscription" status="critical">
-          <p style={{ marginBottom: "15px" }}>Ohh no! Looks like you don't have an active subscription.</p>
-          <Button onClick={() => setActiveTab("pricing")}>Subscribe now</Button>
-        </Banner>
+        <CriticalBanner onSubscribeClick={() => setActiveTab("pricing")} />
       </>}
+
+      {/* Home */}
+      {activeTab === "home" && formData.haveActiveSubscription && (<Home formData={formData} setFormData={setFormData} handleFormSubmit={handleFormSubmit} />
+      )}
 
       {/* Pricing */}
       {activeTab === "pricing" && (
@@ -314,8 +252,40 @@ export default function Index() {
           <PricingPage activeSub={formData.haveActiveSubscription} />
         </>
       )}
-
     </div>
+
+    {/* Footer */}
+    <footer className="text-black">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex items-center justify-center text-center gap-3">
+          {/* Brand Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
+              <Crown className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xl font-bold">Nova-Famous Tracker</span>
+          </div>
+
+          {/* Copyright & Propero Credit */}
+          <div className="text-sm text-gray-400">
+            <p>&copy; {new Date().getFullYear()} Nova-Famous Tracker. All rights reserved.</p>
+            <p>
+              Powered by{" "}
+              <a
+                href="https://www.propero.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-orange-400 hover:text-purple-300 transition"
+              >
+                Propero
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </>
+
   );
 }
 

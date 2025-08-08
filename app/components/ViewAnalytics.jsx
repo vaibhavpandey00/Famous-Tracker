@@ -21,13 +21,7 @@ const analyticsData = {
         { category: "Influencer", matches: 15, percentage: 31.9, revenue: 3800 },
         { category: "Athlete", matches: 9, percentage: 19.1, revenue: 2100 },
         { category: "Musician", matches: 5, percentage: 10.6, revenue: 1350 },
-    ],
-    topInfluencers: [
-        { name: "Emma Stone", orders: 3, revenue: 467.25, platform: "Instagram" },
-        { name: "Marcus Johnson", orders: 2, revenue: 234.5, platform: "TikTok" },
-        { name: "Sarah Chen", orders: 2, revenue: 389.75, platform: "YouTube" },
-        { name: "David Rodriguez", orders: 1, revenue: 156.8, platform: "Instagram" },
-    ],
+    ]
 }
 
 export default function ViewAnalytics({ onClose }) {
@@ -76,10 +70,6 @@ export default function ViewAnalytics({ onClose }) {
                             <option value="90d">Last 90 days</option>
                             <option value="1y">Last year</option>
                         </select>
-                        <button className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center space-x-2 transition-colors">
-                            <Download className="h-4 w-4" />
-                            <span>Export</span>
-                        </button>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                             <X className="h-5 w-5 text-gray-500" />
                         </button>
@@ -89,7 +79,7 @@ export default function ViewAnalytics({ onClose }) {
                 {/* Tabs */}
                 <div className="border-b border-gray-200">
                     <nav className="flex space-x-8 px-6">
-                        {[ "overview", "trends", "categories", "influencers" ].map((tab) => (
+                        {[ "overview", "trends", "categories" ].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -223,36 +213,6 @@ export default function ViewAnalytics({ onClose }) {
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === "influencers" && (
-                        <div className="space-y-6">
-                            <div className="bg-white border border-gray-200 rounded-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Influencers</h3>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-gray-200">
-                                                <th className="text-left py-3 px-4 font-medium text-gray-600">Name</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-600">Platform</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-600">Orders</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-600">Revenue</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {analyticsData.topInfluencers.map((influencer, index) => (
-                                                <tr key={index} className="border-b border-gray-100">
-                                                    <td className="py-3 px-4 font-medium text-gray-900">{influencer.name}</td>
-                                                    <td className="py-3 px-4 text-gray-600">{influencer.platform}</td>
-                                                    <td className="py-3 px-4 text-gray-600">{influencer.orders}</td>
-                                                    <td className="py-3 px-4 font-medium text-gray-900">{formatCurrency(influencer.revenue)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
                         </div>

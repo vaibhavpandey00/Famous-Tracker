@@ -1,4 +1,4 @@
-// IMPROVED AlertEmail.jsx - Spam-Free Version
+
 import {
     Body,
     Button,
@@ -15,12 +15,14 @@ import {
 
 const AlertEmail = ({
     userName = "Sarah Johnson",
+    customerCategory = [ "Celebrity", "Artist" ],
     customerName = "Emma Stone",
+    fullName = "Emma Stone",
     customerEmail = "e.stone@email.com",
     products = [ "Organic Face Serum", "Vitamin C Cleanser Bundle" ],
     spent = 156.99,
-    customerCategory = [ "Celebrity", "Artist" ],
     createdAt = "August 5, 2025 at 05:17 PM",
+    note = "This customer falls into the celebrity category, which may present partnership opportunities.",
 }) => {
     return (
         <Html>
@@ -62,6 +64,15 @@ const AlertEmail = ({
 
                             <Row style={infoRow}>
                                 <Column style={labelColumn}>
+                                    <Text style={labelText}>Matches with:</Text>
+                                </Column>
+                                <Column style={valueColumn}>
+                                    <Text style={valueText}>{fullName}</Text>
+                                </Column>
+                            </Row>
+
+                            <Row style={infoRow}>
+                                <Column style={labelColumn}>
                                     <Text style={labelText}>Email:</Text>
                                 </Column>
                                 <Column style={valueColumn}>
@@ -93,6 +104,12 @@ const AlertEmail = ({
                                 {products.map((product, index) => (
                                     <Text key={index} style={productText}>{index + 1}. {product.slice(0, 45) + (product.length > 10 ? "..." : "")}</Text>
                                 ))}
+                            </Section>
+
+                            <Section style={purchaseSection}>
+                                <Text style={labelText}>Note:</Text>
+                                {/* <Text style={productText}>{product}</Text> */}
+                                <Text style={productText}>{note}</Text>
                             </Section>
 
                             <Text style={timestampText}>
@@ -187,8 +204,8 @@ const AlertEmail = ({
                             Famous Tracker - Customer Relationship Management
                         </Text>
                         <Text style={footerLinks}>
-                            <Link style={footerLink} href="#">Dashboard</Link> |
-                            <Link style={footerLink} href="#">Settings</Link> |
+                            <Link style={footerLink} href="https://famoustracker.io">Dashboard</Link> |
+                            <Link style={footerLink} href="https://famoustracker.io">Settings</Link> |
                             <Link style={footerLink} href="mailto:support@famoustracker.io">Support</Link>
                         </Text>
                         <Text style={unsubscribeText}>
@@ -209,8 +226,7 @@ const main = {
 
 const container = {
     margin: "0 auto",
-    padding: "20px",
-    maxWidth: "600px",
+    maxWidth: "630px",
 };
 
 const header = {

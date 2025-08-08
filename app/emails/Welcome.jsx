@@ -225,7 +225,7 @@ const main = {
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
-  maxWidth: "650px",
+  maxWidth: "630px",
   border: "1px solid #e1e5e9",
   borderRadius: "8px",
 };

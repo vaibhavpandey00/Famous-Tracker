@@ -99,6 +99,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                                     <input
                                         type="checkbox"
                                         checked={formData.slackAlerts}
+                                        disabled
                                         onChange={(e) => setFormData((prev) => ({ ...prev, slackAlerts: e.target.checked }))}
                                         className="sr-only peer"
                                     />
@@ -198,7 +199,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                     </div>
 
                     {/* Alert Frequency */}
-                    <div>
+                    {/* <div>
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Alert Frequency</h3>
                         <select
                             value={formData.alertFrequency}
@@ -210,10 +211,10 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                             <option value="daily">Daily Digest</option>
                             <option value="weekly">Weekly Summary</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Quiet Hours */}
-                    <div>
+                    {/* <div>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium text-gray-900">Quiet Hours</h3>
                             <label className="relative inline-flex items-center cursor-pointer">
@@ -263,7 +264,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
