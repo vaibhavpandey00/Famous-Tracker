@@ -3,7 +3,7 @@
 client_id = "65c24964cec15300f4d4e3ccc5930eb6"
 name = "Famous Tracker"
 handle = "famous-tracker"
-application_url = "https://lot-para-ba-premises.trycloudflare.com"
+application_url = "https://famoustracker.io"
 embedded = true
 
 [build]
@@ -30,7 +30,7 @@ api_version = "2024-10"
 scopes = "read_orders,read_customers,write_customers,read_products"
 
 [auth]
-redirect_urls = ["https://lot-para-ba-premises.trycloudflare.com/auth/callback", "https://lot-para-ba-premises.trycloudflare.com/auth/shopify/callback", "https://lot-para-ba-premises.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://famoustracker.io/auth/callback", "https://famoustracker.io/auth/shopify/callback", "https://famoustracker.io/api/auth/callback"]
 
 [pos]
 embedded = false
