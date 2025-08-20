@@ -17,13 +17,7 @@ import {
 import * as React from "react";
 
 const WelcomeEmail = ({
-  userName = "Emma Rodriguez",
-  setupData = {
-    minimumOrderValue: 200,
-    minimumFollowers: 50000,
-    categories: [ "Celebrity", "Musician" ],
-    alertChannels: [ "Email", "Slack" ],
-  }
+  userName = "Sarah Johnson",
 }) => (
   <Html>
     <Head />
@@ -68,111 +62,43 @@ const WelcomeEmail = ({
           </Text>
         </Section>
 
-        <Section style={setupContainer}>
-          {/* Setup Configuration Card */}
-          <Section style={setupSection}>
-            <Heading style={setupTitle}>⚡ Celebrity Radar is Active</Heading>
-            <Row>
-              <Column style={setupColumn}>
-                <Text style={setupLabel}>Tracking Orders Above</Text>
-                <Text style={setupValue}>${setupData.minimumOrderValue}</Text>
-              </Column>
-              <Column style={setupColumn}>
-                <Text style={setupLabel}>Min. Followers</Text>
-                <Text style={setupValue}>
-                  {setupData.minimumFollowers.toLocaleString()}
-                </Text>
-              </Column>
-            </Row>
-            <Text style={categoriesText}>
-              Tracking: {setupData.categories.join(", ")}
+        {/* ---- WHAT HAPPENS NEXT ---- */}
+        <Section style={contentSection}>
+          <Text style={sectionTitle}>What Happens Next?</Text>
+          <Text style={sectionDescription}>
+            Our system is now active. Here’s the simple, 3-step process:
+          </Text>
+
+          {/* Step 1 */}
+          <Section style={stepCard}>
+            <Text style={stepNumber}>1</Text>
+            <Text style={stepTitle}>We Monitor New Orders</Text>
+            <Text style={stepText}>
+              Famous Tracker will now automatically check every **new order** placed on your store against our VIP database in real-time.
+            </Text>
+          </Section>
+
+          {/* Step 2 */}
+          <Section style={stepCard}>
+            <Text style={stepNumber}>2</Text>
+            <Text style={stepTitle}>A Match Is Found</Text>
+            <Text style={stepText}>
+              When a customer's name and location match a profile, we identify them as a potential high-value customer.
+            </Text>
+          </Section>
+
+          {/* Step 3 */}
+          <Section style={stepCard}>
+            <Text style={stepNumber}>3</Text>
+            <Text style={stepTitle}>You Get an Instant Alert</Text>
+            <Text style={stepText}>
+              You'll receive a detailed email notification immediately, giving you the opportunity to create a personalized experience.
             </Text>
           </Section>
         </Section>
 
-        {/* Timeline Section */}
-        <Section style={timelineSection}>
-          <Heading style={sectionTitle}>What Happens Next</Heading>
-
-          <div style={timelineItem}>
-            <Text style={timelineTime}>🔵 Right Now</Text>
-            <Text style={timelineTitle}>We're scanning your store</Text>
-            <Text style={timelineDesc}>Our AI is analyzing your customer database for celebrity matches</Text>
-          </div>
-
-          <div style={timelineItem}>
-            <Text style={timelineTime}>🟢 Within 24 hours</Text>
-            <Text style={timelineTitle}>First celebrity detected</Text>
-            <Text style={timelineDesc}>You'll receive your first celebrity purchase alert</Text>
-          </div>
-
-          <div style={timelineItem}>
-            <Text style={timelineTime}>🟣 This week</Text>
-            <Text style={timelineTitle}>Partnership opportunities</Text>
-            <Text style={timelineDesc}>Start reaching out to celebrities for collaborations</Text>
-          </div>
-
-          <div style={timelineItem}>
-            <Text style={timelineTime}>🟠 This month</Text>
-            <Text style={timelineTitle}>Measurable results</Text>
-            <Text style={timelineDesc}>See increased engagement and revenue from celebrity partnerships</Text>
-          </div>
-        </Section>
-
-
-        <Section style={cardsContainer}>
-
-          {/* This Hr is our reliable spacer */}
-          <Hr style={spacer} />
-
-          {/* Video Section Card */}
-          <Section style={videoSection}>
-            <Text style={videoTitle}>
-              ▶️ Watch: How to Turn Celebrity Purchases into Gold
-            </Text>
-            <Text style={videoDesc}>
-              Learn the exact strategies our top customers use to convert
-              celebrity purchases into partnerships
-            </Text>
-            <Button
-              style={videoButton}
-              href="https://famoustracker.io/tutorial"
-            >
-              ▶️ Watch 3-Minute Tutorial
-            </Button>
-          </Section>
-
-          {/* Another spacer */}
-          <Hr style={spacer} />
-
-          {/* Special Offer Card */}
-          <Section style={offerSection}>
-            <Text style={offerTitle}>
-              🎁 Welcome Bonus: Free Celebrity Outreach Templates
-            </Text>
-            <Text style={offerDesc}>
-              Get our proven email templates that convert 40% of celebrity
-              outreach into partnerships
-            </Text>
-            <Button
-              style={offerButton}
-              href="https://famoustracker.io/templates"
-            >
-              Download Templates
-            </Button>
-          </Section>
-        </Section>
-
-
-        {/* Quick Start Checklist */}
-        <Section style={checklistSection}>
-          <Heading style={sectionTitle}>Your 5-Minute Quick Start Checklist</Heading>
-          <div style={checklistItem}>☐ Check your dashboard for any existing celebrity matches</div>
-          <div style={checklistItem}>☐ Set up Slack notifications for your team</div>
-          <div style={checklistItem}>☐ Download celebrity outreach templates</div>
-          <div style={checklistItem}>☐ Watch the 3-minute tutorial video</div>
-          <div style={checklistItem}>☐ Bookmark your analytics dashboard</div>
-        </Section>
+        {/* Another spacer */}
+        <Hr style={spacer} />
 
         {/* Main CTA */}
         <Section style={ctaSection}>
@@ -181,11 +107,8 @@ const WelcomeEmail = ({
             Your dashboard is live and ready. Start exploring the power of celebrity customer intelligence!
           </Text>
           <div style={buttonContainer}>
-            <Button style={primaryButton} href="https://famoustracker.io/dashboard">
-              📊 Open Dashboard
-            </Button>
-            <Button style={secondaryButton} href="https://famoustracker.io/demo">
-              💬 Get Live Demo
+            <Button style={primaryButton} href="https://famoustracker.io/app">
+              Open Dashboard
             </Button>
           </div>
         </Section>
@@ -232,7 +155,7 @@ const container = {
 
 const heroSection = {
   background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  padding: "40px 30px",
+  padding: "40px 10px",
   textAlign: "center",
   color: "#ffffff",
 };
@@ -298,9 +221,8 @@ const successDescription = {
   margin: "0",
 };
 
-const timelineSection = {
-  padding: "30px",
-  backgroundColor: "#ffffff",
+const contentSection = {
+  padding: '30px',
 };
 
 const sectionTitle = {
@@ -311,177 +233,54 @@ const sectionTitle = {
   margin: "0 0 30px",
 };
 
-const timelineItem = {
-  marginBottom: "20px",
-  padding: "15px",
-  backgroundColor: "#f8f9fa",
-  borderRadius: "8px",
-  borderLeft: "4px solid #667eea",
+const sectionDescription = {
+  fontSize: '16px',
+  color: '#475569',
+  margin: '0 0 25px',
+  textAlign: 'center',
 };
 
-const timelineTime = {
-  fontSize: "14px",
-  fontWeight: "bold",
-  color: "#667eea",
-  margin: "0 0 5px",
+const stepCard = {
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  padding: '20px',
+  marginBottom: '15px',
+  position: 'relative',
 };
 
-const timelineTitle = {
-  fontSize: "18px",
-  fontWeight: "bold",
-  color: "#1a1a1a",
-  margin: "0 0 5px",
+const stepNumber = {
+  position: 'absolute',
+  top: '12px',
+  left: '15px',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  color: '#4f46e5',
+  backgroundColor: '#e0e7ff',
+  borderRadius: '50%',
+  width: '28px',
+  height: '28px',
+  lineHeight: '28px',
+  textAlign: 'center',
 };
 
-const timelineDesc = {
-  fontSize: "14px",
-  color: "#666666",
-  margin: "0",
+const stepTitle = {
+  fontSize: '16px',
+  fontWeight: '600',
+  color: '#1e293b',
+  margin: '0 0 5px 40px',
 };
 
-const setupContainer = {
-  padding: "40px 30px",
-  backgroundColor: "#f8f9fa",
-}
-
-const cardsContainer = {
-  padding: "40px 30px",
+const stepText = {
+  fontSize: '14px',
+  color: '#475569',
+  lineHeight: '1.6',
+  margin: '0 0 0 40px',
 };
 
 // This new style creates the vertical gap between cards
 const spacer = {
-  borderColor: "transparent",
-  borderWidth: "10px 0",
-  margin: "0",
-};
-
-// I've created a generic 'card' style for consistency
-const card = {
-  borderRadius: "8px",
-  padding: "30px",
-  textAlign: "center",
-};
-
-// Specific styles for each card
-const setupSection = {
-  ...card,
-  padding: "20px",
-  backgroundColor: "#f0f7ff",
-  border: "1px solid #b3d9ff",
-};
-
-const videoSection = {
-  ...card,
-  backgroundColor: "#1a1a1a",
-  color: "#ffffff",
-};
-
-const offerSection = {
-  ...card,
-  background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)",
-  color: "#ffffff",
-};
-
-const setupTitle = {
-  fontSize: "18px",
-  fontWeight: "bold",
-  color: "#1a1a1a",
-  margin: "0 0 20px",
-};
-
-const setupColumn = {
-  width: "50%",
-  textAlign: "center",
-  padding: "15px",
-  backgroundColor: "#ffffff",
-  margin: "5px",
-  borderRadius: "8px",
-  border: "1px solid #e1e5e9",
-};
-
-const setupLabel = {
-  fontSize: "12px",
-  color: "#666666",
-  margin: "0 0 5px",
-};
-
-const setupValue = {
-  fontSize: "20px",
-  fontWeight: "bold",
-  color: "#1a1a1a",
-  margin: "0",
-};
-
-const categoriesText = {
-  fontSize: "14px",
-  fontWeight: "bold",
-  color: "#000",
-  textAlign: "center",
-  margin: "15px 0 0",
-  padding: "8px 16px",
-  backgroundColor: "#ffffff",
-  borderRadius: "20px",
-  border: "1px solid #b3d9ff",
-};
-
-const videoTitle = {
-  fontSize: "20px",
-  fontWeight: "bold",
-  color: "#ffffff",
-  margin: "0 0 10px",
-};
-
-const videoDesc = {
-  fontSize: "14px",
-  color: "#cccccc",
-  margin: "0 0 20px",
-};
-
-const videoButton = {
-  backgroundColor: "#667eea",
-  color: "#ffffff",
-  padding: "12px 24px",
-  borderRadius: "6px",
-  textDecoration: "none",
-  fontSize: "16px",
-  fontWeight: "bold",
-};
-
-const offerTitle = {
-  fontSize: "18px",
-  fontWeight: "bold",
-  color: "#ffffff",
-  margin: "0 0 10px",
-};
-
-const offerDesc = {
-  fontSize: "14px",
-  color: "#ffe6d9",
-  margin: "0 0 20px",
-};
-
-const offerButton = {
-  backgroundColor: "#ffffff",
-  color: "#ff6b35",
-  padding: "12px 24px",
-  borderRadius: "6px",
-  textDecoration: "none",
-  fontSize: "16px",
-  fontWeight: "bold",
-};
-
-const checklistSection = {
-  padding: "30px",
-  backgroundColor: "#ffffff",
-};
-
-const checklistItem = {
-  fontSize: "14px",
-  color: "#333333",
-  margin: "10px 0",
-  padding: "12px",
-  backgroundColor: "#f8f9fa",
-  borderRadius: "6px",
+  borderColor: '#e2e8f0',
+  margin: "30px 0",
 };
 
 const ctaSection = {
@@ -512,18 +311,6 @@ const buttonContainer = {
 const primaryButton = {
   backgroundColor: "#ffffff",
   color: "#667eea",
-  padding: "14px 28px",
-  borderRadius: "6px",
-  textDecoration: "none",
-  fontSize: "16px",
-  fontWeight: "bold",
-  margin: "0 10px 10px",
-  display: "inline-block",
-};
-
-const secondaryButton = {
-  backgroundColor: "#5a67d8",
-  color: "#ffffff",
   padding: "14px 28px",
   borderRadius: "6px",
   textDecoration: "none",

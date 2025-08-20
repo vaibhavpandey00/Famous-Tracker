@@ -9,7 +9,6 @@ import WelcomeEmail from "../emails/Welcome";
 
 export const loader = async ({ request }) => {
     const { admin, session, billing } = await authenticate.admin(request);
-
     // Check whether the store has an active subscription
     const checkPlans = await billing.check();
 
@@ -24,12 +23,10 @@ export const loader = async ({ request }) => {
     try {
         const shopName = session.shop.replace(".myshopify.com", "");
         const rawShopData = await getShopData(admin, shopName);
-        console.log("Welcome Loader: Successfully fetched raw shop data.");
+        // console.log("Welcome Loader: Successfully fetched raw shop data.");
 
         delete rawShopData.id;
         delete rawShopData.hasActiveSubscription;
-        delete rawShopData.alertFrequency;
-        delete rawShopData.quietHours;
         // delete all the alert channels
         delete rawShopData.emailAlerts;
         delete rawShopData.slackAlerts;
@@ -39,7 +36,7 @@ export const loader = async ({ request }) => {
         delete rawShopData.updatedAt;
         delete rawShopData.subscriptionStatus;
 
-        console.log("Welcome Loader: Returning shop data.");
+        // console.log("Welcome Loader: Returning shop data.");
         return rawShopData;
     } catch (error) {
         console.error("Loader: Error during shop data processing or fetching:", error);
@@ -58,6 +55,8 @@ export const action = async ({ request }) => {
     let data = await request.json();
     data.subscriptionStatus = { active: haveActiveSubscription, subId: subscriptionId };
 
+    // console.log("Welcome Action: Form data:", data);
+
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { updateShopRecord } = await import("../utils/shopUtils.server");
@@ -68,21 +67,10 @@ export const action = async ({ request }) => {
         const userName = data.name || "there";
         const recipientEmail = data.email;
 
-        const selectedCategories = Object.keys(data.categories)
-            .filter(key => data.categories[ key ])
-            .map(key => key.charAt(0).toUpperCase() + key.slice(1));
-
-        const setupData = {
-            minimumOrderValue: data.minimumOrderValue,
-            minimumFollowers: data.minimumFollowers,
-            categories: selectedCategories,
-            alertChannels: [ "Email", "In-App" ],
-        }
-
         if (!recipientEmail) {
             return json({ error: "Email address is required." }, { status: 400 });
         }
-        const emailHtml = await render(WelcomeEmail({ userName, setupData }));
+        const emailHtml = await render(WelcomeEmail({ userName }));
 
         // Additional safety check to ensure emailHtml is a string
         if (typeof emailHtml !== 'string') {
@@ -126,19 +114,6 @@ export default function Welcome() {
         // Personal Information
         name: "",
         email: "",
-
-        minimumOrderValue: 0,
-        minimumFollowers: 0,
-
-        // Alert Categories
-        categories: {
-            celebrity: true,
-            influencer: true,
-            athlete: false,
-            musician: false,
-        },
-
-        // Step 3: Terms accepted
         termsAccepted: false,
     });
 
@@ -146,9 +121,7 @@ export default function Welcome() {
         if (loaderData) {
             const updatedFormData = {
                 ...formData,
-                ...loaderData,
-                categories: { ...formData.categories, ...loaderData.categories },
-                quietHours: { ...formData.quietHours, ...loaderData.quietHours },
+                ...loaderData
             };
             setFormData(updatedFormData);
         }

@@ -10,7 +10,6 @@ import { authenticate } from "../shopify.server";
 import { useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import logger from "../utils/logger.client";
 import { hasDataChanged, getChangedFields } from "../utils/indexUtils.client";
-import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
   console.log("Loader: Starting authentication process...");
@@ -45,7 +44,6 @@ export const loader = async ({ request }) => {
   }
 
   // console.log("Loader: haveActiveSubscription:", haveActiveSubscription);
-
   // if (haveActiveSubscription) {
   //   await billing.cancel({
   //     subscriptionId: subscriptionId,
@@ -58,22 +56,23 @@ export const loader = async ({ request }) => {
     return dataToSend;
   }
 
-  const { getShopData } = await import("../utils/shopUtils.server");
+  const { getShopData, getShopStats } = await import("../utils/shopUtils.server");
 
   try {
     const shopName = session.shop.replace(".myshopify.com", "");
     // console.log("Loader: Attempting to fetch shop data using admin.graphql...");
-    const rawShopData = await getShopData(admin, shopName);
-    console.log("Loader: Successfully fetched raw shop data.");
-
-    const hasCompletedWelcome = rawShopData.termsAccepted;
+    const [ shopData, shopDashboardData ] = await Promise.all([ getShopData(admin, shopName), getShopStats(admin) ]);
+    
+    const hasCompletedWelcome = shopData.termsAccepted;
 
     if (!hasCompletedWelcome) {
       return redirect("/app/welcome");
     }
 
-    const modifiedShopData = { ...rawShopData };
+    const modifiedShopData = { ...shopData };
 
+    modifiedShopData.stats = shopDashboardData.stats;
+    modifiedShopData.recentMatches = shopDashboardData.recentMatches;
     modifiedShopData.haveActiveSubscription = haveActiveSubscription;
 
     delete modifiedShopData.id;
@@ -86,29 +85,22 @@ export const loader = async ({ request }) => {
     return modifiedShopData;
   } catch (error) {
     console.error("Loader: Error during shop data processing or fetching:", error);
-    // Re-throw the error to be caught by the ErrorBoundary
     throw error;
   }
 };
 
 export const action = async ({ request }) => {
-  const { uploadCelebsToDB } = await import("../utils/seedDatabase");
   const { updateShopRecord } = await import("../utils/shopUtils.server");
   const { admin } = await authenticate.admin(request);
 
   const shopData = await request.json();
   const Action = shopData.Action;
-  console.log("Action:", Action);
+  // console.log("Action:", Action);
 
   switch (Action) {
     case "updateShopRecord":
       delete shopData.Action;
       await updateShopRecord(admin, shopData);
-      break;
-
-    case "createCelebRecord":
-      console.log("Creating Celeb Record...");
-      await uploadCelebsToDB(prisma);
       break;
 
     default:
@@ -152,11 +144,15 @@ export default function Index() {
     },
     haveActiveSubscription: false
   });
+  const [ stats, setStats ] = useState(null);
+  const [ recentMatches, setRecentMatches ] = useState([]);
   const [ originalData, setOriginalData ] = useState(null);
   const [ activeTab, setActiveTab ] = useState("home");
 
   useEffect(() => {
     if (loaderData && loaderData.haveActiveSubscription) {
+      // console.log("Loader Data:", loaderData);
+
       const updatedFormData = {
         ...formData,
         ...loaderData,
@@ -164,6 +160,10 @@ export default function Index() {
         quietHours: { ...formData.quietHours, ...loaderData.quietHours },
       };
       setFormData(updatedFormData);
+
+      // Set stats and recentMatches
+      loaderData.stats ? setStats(loaderData.stats) : setStats(null);
+      loaderData.recentMatches.length > 0 ? setRecentMatches(loaderData.recentMatches) : setRecentMatches([]);
 
       // Store original data for comparison (excluding haveActiveSubscription)
       const originalDataCopy = { ...updatedFormData };
@@ -210,7 +210,7 @@ export default function Index() {
 
       {/* Toggle tab home and pricing */}
       <div
-        className="flex w-full lg:w-[70%] items-center justify-between mb-3 space-x-4">
+        className="flex w-full lg:w-[80%] items-center justify-between mb-3 space-x-4">
 
         <Text as="h2" variant="headingLg">/ {activeTab === "home" ? "Dashboard" : "Pricing"}</Text>
 
@@ -230,20 +230,19 @@ export default function Index() {
 
       </div>
 
-      {/* Seed Database */}
-      {/* <button
-        onClick={() => handleFormSubmit("createCelebRecord")}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Seed Databse...
-      </button> */}
-
       {/* For no active subscription */}
       {activeTab === "home" && !formData.haveActiveSubscription && <>
         <CriticalBanner onSubscribeClick={() => setActiveTab("pricing")} />
       </>}
 
       {/* Home */}
-      {activeTab === "home" && formData.haveActiveSubscription && (<Home formData={formData} setFormData={setFormData} handleFormSubmit={handleFormSubmit} />
+      {activeTab === "home" && formData.haveActiveSubscription && (<Home
+        formData={formData}
+        setFormData={setFormData}
+        stats={stats}
+        recentMatches={recentMatches}
+        handleFormSubmit={handleFormSubmit}
+      />
       )}
 
       {/* Pricing */}

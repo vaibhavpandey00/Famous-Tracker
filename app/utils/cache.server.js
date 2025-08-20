@@ -2,7 +2,7 @@
 const cache = new Map();
 
 // Default Time-To-Live (TTL) for cache entries, in seconds.
-const DEFAULT_TTL_SECONDS = 60;
+const DEFAULT_TTL_SECONDS = 600;
 
 /**
  * Retrieves an item from the cache if it exists and is not expired.
@@ -19,7 +19,7 @@ export function getCache(key) {
 
     // If there's no entry, it's a cache miss.
     if (!entry) {
-        console.log(`❌ CACHE MISS for key: ${key}`);
+        // console.log(`❌ CACHE MISS for key: ${key}`);
         return null;
     }
 
@@ -27,13 +27,11 @@ export function getCache(key) {
     const isExpired = Date.now() > entry.expiresAt;
 
     if (isExpired) {
-        console.log(`⚠️ CACHE EXPIRED for key: ${key}`);
-        // Clean up the expired item from the cache.
+        // console.log(`⚠️ CACHE EXPIRED for key: ${key}`);
         cache.delete(key);
         return null;
     }
-
-    console.log(`✅ CACHE HIT for key: ${key}`);
+    // console.log(`✅ CACHE HIT for key: ${key}`);
     return entry.value;
 }
 
@@ -54,7 +52,7 @@ export function setCache(key, value, ttlInSeconds = DEFAULT_TTL_SECONDS) {
         value,
         expiresAt,
     });
-    console.log(`➕ CACHE SET for key: ${key} with TTL: ${ttlInSeconds}s`);
+    // console.log(`➕ CACHE SET for key: ${key} with TTL: ${ttlInSeconds}s`);
 }
 
 /**
@@ -68,6 +66,6 @@ export function invalidateCache(key) {
     }
     const deleted = cache.delete(key);
     if (deleted) {
-        console.log(`🔶 CACHE INVALIDATED for key: ${key}`);
+        // console.log(`🔶 CACHE INVALIDATED for key: ${key}`);
     }
 }

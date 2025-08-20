@@ -2,9 +2,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
@@ -29,78 +26,125 @@ model Session {
   emailVerified Boolean?  @default(false)
 }
 
-// Define an embedded type for Socials
+// Enums ensure data consistency for categories and subcategories.
+enum Category {
+  ATHLETE
+  INFLUENCER
+  MUSICIAN
+  ACTOR
+  ENTREPRENEUR
+}
+
+enum Subcategory {
+  // Athlete Subcategories
+  NFL
+  NBA
+  WNBA
+  MLB
+  MLS
+  PREMIER_LEAGUE
+  NHL
+  PGA_TOUR
+  FORMULA_1
+  // Influencer Subcategories
+  TWITTER
+  X
+  FACEBOOK
+  INSTAGRAM
+  YOUTUBE
+  TIKTOK
+  TWITCH
+}
+
+// Composite Type for grouping location fields.
+type Location {
+  city    String?
+  state   String?
+  country String
+}
+
+// Composite Type for a flexible list of social media profiles.
 type Social {
-  platform  String
-  link      String
-  followers Int?
+  platform String
+  link     String
 }
 
 model GlobalCelebrity {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
   fullName       String
-  normalizedName String   @unique
-  categories     String[]
-  socials        Social[]
-  maxFollower    String?
-  note           String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  normalizedName String
 
-  @@index([categories])
+  categories    Category[]
+  subcategories Subcategory[]
+
+  socials Social[]
+
+  location Location?
+
+  // Athlete-specific fields remain optional.
+  league   String?
+  team     String?
+  position String?
+
+  // Two fields for follower counts: one for calculation, one for display.
+  maxFollowerCount   BigInt?
+  maxFollowerDisplay String?
+
+  notableAchievements String[]
+  notes               String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Indexes for Performance ---
+  // Index for the new normalized name, critical for your search logic.
+  @@index([normalizedName])
+  // Index for searching by full name as a fallback.
   @@index([fullName])
+  // Index to speed up filtering by categories.
+  @@index([categories])
 }
 
-// A CUSTOM watchlist item. This belongs to ONE store.
-model CustomWatchlistItem {
-  id             String  @id @default(auto()) @map("_id") @db.ObjectId
-  name           String
-  normalizedName String
-  category       String? @default("Custom")
-  shopId         String  @db.ObjectId
-  store          Shops   @relation(fields: [shopId], references: [id])
+model MatchedCelebrity {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Customer Details
+  customerName       String
+  orderId            String
+  products           String[]
+  orderValue         Float
+  // Customer matching celebrity detials
+  matchedCelebName   String
+  matchScore         Float?
+  celebCategories    String[]
+  socials            Social[]
+  maxFollowerDisplay String?
+  createdAt          DateTime @default(now())
 
-  @@unique([shopId, name])
+  // Relation to the Shops model
+  shopId String @db.ObjectId
+  shop   Shops  @relation(fields: [shopId], references: [id])
+
+  @@index([shopId, createdAt])
 }
 
 model Shops {
-  id                 String                @id @default(auto()) @map("_id") @db.ObjectId
-  shopId             String                @unique
-  shopName           String?               @unique
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  shopId             String             @unique
+  shopName           String?            @unique
   subscriptionStatus HasActiveSubs
   name               String?
-  email              String?               @unique
-  emailAlerts        Boolean               @default(false)
-  slackAlerts        Boolean               @default(false)
-  webhookAlerts      Boolean               @default(true)
-  inAppAlerts        Boolean               @default(false)
-  minimumOrderValue  Int                   @default(1)
-  minimumFollowers   Int                   @default(100)
-  categories         ShopCategories
-  alertFrequency     String                @default("immediate")
-  quietHours         ShopQuietHours
-  termsAccepted      Boolean?              @default(false)
-  customWatchlist    CustomWatchlistItem[]
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  email              String?            @unique
+  emailAlerts        Boolean            @default(false)
+  slackAlerts        Boolean            @default(false)
+  webhookAlerts      Boolean            @default(true)
+  inAppAlerts        Boolean            @default(false)
+  termsAccepted      Boolean?           @default(false)
+  matches            MatchedCelebrity[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 type HasActiveSubs {
   active Boolean @default(false)
   subId  String?
-}
-
-// Embedded document for Alert Categories
-type ShopCategories {
-  celebrity  Boolean @default(true)
-  influencer Boolean @default(true)
-  athlete    Boolean @default(true)
-  musician   Boolean @default(true)
-}
-
-// Embedded document for Quiet Hours
-type ShopQuietHours {
-  enabled Boolean @default(false)
-  start   String  @default("22:00")
-  end     String  @default("08:00")
 }

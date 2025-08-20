@@ -18,105 +18,103 @@ import ErrorComponents from "./ErrorComponents"
 import ProblematicComponent from "./ProblematicComponent"
 
 // Dummy data
-const recentMatches = [
-    {
-        id: 1,
-        customerName: "Emma Stone",
-        email: "e.stone@email.com",
-        orderValue: 156.99,
-        platform: "Instagram",
-        followers: "2.1M",
-        engagementRate: "3.2%",
-        category: "Celebrity",
-        matchTime: "2 minutes ago",
-        status: "new",
-        profileImage: "/",
-        orderItems: [ "Organic Face Serum", "Vitamin C Cleanser" ],
-    },
-    {
-        id: 2,
-        customerName: "Marcus Johnson",
-        email: "mjohnson@sports.com",
-        orderValue: 89.5,
-        platform: "TikTok",
-        followers: "850K",
-        engagementRate: "5.8%",
-        category: "Athlete",
-        matchTime: "15 minutes ago",
-        status: "contacted",
-        profileImage: "/",
-        orderItems: [ "Protein Powder", "Recovery Drink" ],
-    },
-    {
-        id: 3,
-        customerName: "Sarah Chen",
-        email: "sarahc@influence.co",
-        orderValue: 234.75,
-        platform: "YouTube",
-        followers: "1.3M",
-        engagementRate: "4.1%",
-        category: "Influencer",
-        matchTime: "1 hour ago",
-        status: "processed",
-        profileImage: "/",
-        orderItems: [ "Skincare Bundle", "Hair Treatment", "Supplements" ],
-    },
-    {
-        id: 4,
-        customerName: "David Rodriguez",
-        email: "d.rodriguez@music.com",
-        orderValue: 67.25,
-        platform: "Instagram",
-        followers: "3.8M",
-        engagementRate: "2.9%",
-        category: "Musician",
-        matchTime: "3 hours ago",
-        status: "new",
-        profileImage: "/",
-        orderItems: [ "Concert Tee", "Accessories" ],
-    },
-]
+// const recentMatches = [
+//     {
+//         id: 1,
+//         customerName: "Emma Stone",
+//         email: "e.stone@email.com",
+//         orderValue: 156.99,
+//         platform: "Instagram",
+//         followers: "2.1M",
+//         engagementRate: "3.2%",
+//         category: "Celebrity",
+//         matchTime: "2 minutes ago",
+//         status: "new",
+//         profileImage: "/",
+//         orderItems: [ "Organic Face Serum", "Vitamin C Cleanser" ],
+//     },
+//     {
+//         id: 2,
+//         customerName: "Marcus Johnson",
+//         email: "mjohnson@sports.com",
+//         orderValue: 89.5,
+//         platform: "TikTok",
+//         followers: "850K",
+//         engagementRate: "5.8%",
+//         category: "Athlete",
+//         matchTime: "15 minutes ago",
+//         status: "contacted",
+//         profileImage: "/",
+//         orderItems: [ "Protein Powder", "Recovery Drink" ],
+//     },
+//     {
+//         id: 3,
+//         customerName: "Sarah Chen",
+//         email: "sarahc@influence.co",
+//         orderValue: 234.75,
+//         platform: "YouTube",
+//         followers: "1.3M",
+//         engagementRate: "4.1%",
+//         category: "Influencer",
+//         matchTime: "1 hour ago",
+//         status: "processed",
+//         profileImage: "/",
+//         orderItems: [ "Skincare Bundle", "Hair Treatment", "Supplements" ],
+//     },
+//     {
+//         id: 4,
+//         customerName: "David Rodriguez",
+//         email: "d.rodriguez@music.com",
+//         orderValue: 67.25,
+//         platform: "Instagram",
+//         followers: "3.8M",
+//         engagementRate: "2.9%",
+//         category: "Musician",
+//         matchTime: "3 hours ago",
+//         status: "new",
+//         profileImage: "/",
+//         orderItems: [ "Concert Tee", "Accessories" ],
+//     },
+// ]
 
-const stats = [
-    {
-        title: "Total Matches",
-        value: "47",
-        change: "+12%",
-        changeType: "positive",
-        icon: Users,
-        period: "This month",
-    },
-    {
-        title: "Revenue from Influencers",
-        value: "$12,450",
-        change: "+23%",
-        changeType: "positive",
-        icon: DollarSign,
-        period: "This month",
-    },
-    {
-        title: "Avg. Order Value",
-        value: "$156.80",
-        change: "+8%",
-        changeType: "positive",
-        icon: TrendingUp,
-        period: "Celebrity orders",
-    }
-]
+// const stats = [
+//     {
+//         title: "Total Matches",
+//         value: "47",
+//         change: "+12%",
+//         changeType: "positive",
+//         icon: Users,
+//         period: "This month",
+//     },
+//     {
+//         title: "Revenue from Influencers",
+//         value: "$12,450",
+//         change: "+23%",
+//         changeType: "positive",
+//         icon: DollarSign,
+//         period: "This month",
+//     },
+//     {
+//         title: "Avg. Order Value",
+//         value: "$156.80",
+//         change: "+8%",
+//         changeType: "positive",
+//         icon: TrendingUp,
+//         period: "Celebrity orders",
+//     }
+// ]
 
-const integrations = [
-    { name: "Klaviyo", status: "disconnected", color: "bg-gray-400" },
-    { name: "Slack", status: "disconnected", color: "bg-gray-400" },
-    { name: "Postscript", status: "disconnected", color: "bg-gray-400" },
-    { name: "Gorgias", status: "disconnected", color: "bg-gray-400" },
-    { name: "Webhooks", status: "connected", color: "bg-green-500" },
-]
+const iconMap = {
+    totalMatches: Users,
+    revenue: DollarSign,
+    avgOrderValue: TrendingUp,
+};
 
-export default function HomeDashboard({ formData, setFormData, handleFormSubmit }) {
+export default function HomeDashboard({ formData, setFormData, stats, recentMatches, handleFormSubmit }) {
     const [ filterCategory, setFilterCategory ] = useState("all");
     const [ searchTerm, setSearchTerm ] = useState("");
 
-    const filteredMatches = recentMatches.filter((match) => {
+    const filteredMatches = recentMatches?.filter((match) => {
         const matchesCategory = filterCategory === "all" || match.category.toLowerCase() === filterCategory
         const matchesSearch =
             match.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,18 +122,19 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
         return matchesCategory && matchesSearch
     })
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case "new":
-                return <AlertCircle className="h-4 w-4 text-orange-500" />
-            case "contacted":
-                return <Clock className="h-4 w-4 text-blue-500" />
-            case "processed":
-                return <CheckCircle className="h-4 w-4 text-green-500" />
-            default:
-                return <AlertCircle className="h-4 w-4 text-gray-500" />
-        }
-    }
+    // Helper functions to get status icon
+    // const getStatusIcon = (status) => {
+    //     switch (status) {
+    //         case "new":
+    //             return <AlertCircle className="h-4 w-4 text-orange-500" />
+    //         case "contacted":
+    //             return <Clock className="h-4 w-4 text-blue-500" />
+    //         case "processed":
+    //             return <CheckCircle className="h-4 w-4 text-green-500" />
+    //         default:
+    //             return <AlertCircle className="h-4 w-4 text-gray-500" />
+    //     }
+    // }
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -151,7 +150,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen w-[80%] bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -172,42 +171,45 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                 {/* Stats Grid */}
                 <ErrorComponents name={"Stats Grid"}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        {stats.map((stat, index) => (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                                        <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                        {stats?.map((stat, index) => {
+                            const IconComponent = iconMap[ stat.iconId ];
+
+                            return (
+                                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                                            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                                        </div>
+                                        <div className="p-3 bg-blue-50 rounded-lg">
+                                            {IconComponent && <IconComponent className="h-6 w-6 text-blue-600" />}
+                                        </div>
                                     </div>
-                                    <div className="p-3 bg-blue-50 rounded-lg">
-                                        <stat.icon className="h-6 w-6 text-blue-600" />
+                                    <div className="flex items-center mt-4">
+                                        <span
+                                            className={`text-sm font-medium ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"
+                                                }`}
+                                        >
+                                            {stat.change}
+                                        </span>
+                                        <span className="text-sm text-gray-500 ml-2">{stat.period}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center mt-4">
-                                    <span
-                                        className={`text-sm font-medium ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"
-                                            }`}
-                                    >
-                                        {stat.change}
-                                    </span>
-                                    <span className="text-sm text-gray-500 ml-2">{stat.period}</span>
-                                </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </ErrorComponents>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Recent Matches */}
-
                     <div className="lg:col-span-2">
                         <ErrorComponents name={"Recent Matches"}>
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                                 <div className="p-6 border-b border-gray-200">
                                     <div className="flex items-center justify-between mb-4">
-                                        <h2 className="text-xl font-semibold text-gray-900">Recent Celebrity Matches</h2>
+                                        <h2 className="text-xl font-semibold text-gray-900 mx-3">Recent Celebrity Matches</h2>
                                         <div className="flex items-center space-x-3">
-                                            <div className="relative">
+                                            {/* <div className="relative">
                                                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                                 <input
                                                     type="text"
@@ -216,7 +218,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 />
-                                            </div>
+                                            </div> */}
                                             <select
                                                 value={filterCategory}
                                                 onChange={(e) => setFilterCategory(e.target.value)}
@@ -233,25 +235,20 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                 </div>
 
                                 <div className="divide-y divide-gray-200">
-                                    {filteredMatches.map((match) => (
+                                    {filteredMatches.length > 0 && filteredMatches.map((match) => (
                                         <div key={match.id} className="p-6 hover:bg-gray-50 transition-colors">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-start space-x-4">
-                                                    <img
-                                                        src={match.profileImage || ""}
-                                                        alt={match.customerName}
-                                                        className="h-12 w-12 rounded-full object-cover"
-                                                    />
                                                     <div className="flex-1">
                                                         <div className="flex items-center space-x-2">
-                                                            <h3 className="font-semibold text-gray-900">{match.customerName}</h3>
+                                                            <h3 className="font-semibold text-gray-900 text-lg">{match.customerName}</h3>
                                                             <span
                                                                 className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(match.status)}`}
                                                             >
                                                                 {match.status}
                                                             </span>
                                                         </div>
-                                                        <p className="text-sm text-gray-600">{match.email}</p>
+                                                        {/* <p className="text-sm text-gray-600">{match.email}</p> */}
                                                         <div className="flex items-center space-x-4 mt-2">
                                                             <span className="text-sm text-gray-500">
                                                                 <strong>${match.orderValue}</strong> • {match.matchTime}
@@ -259,16 +256,21 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                                             <span className="text-sm text-blue-600 font-medium">
                                                                 {match.platform} • {match.followers} followers
                                                             </span>
-                                                            <span className="text-sm text-green-600">{match.engagementRate} engagement</span>
                                                         </div>
                                                         <div className="mt-2">
-                                                            <p className="text-sm text-gray-600">
-                                                                <strong>Items:</strong> {match.orderItems.join(", ")}
+                                                            <p className="flex flex-col text-sm text-gray-600">
+                                                                <strong>Items:</strong>
+                                                                {match.orderItems.map((item, index) => (
+                                                                    <span key={index}>
+                                                                        {index + 1}. {item.slice(0, 50) + (item.length > 50 ? "..." : "")}
+                                                                    </span>
+                                                                ))}
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center space-x-2">
+                                                {/* Followup Actions */}
+                                                {/* <div className="flex items-center space-x-2">
                                                     {getStatusIcon(match.status)}
                                                     <div className="flex items-center space-x-1">
                                                         <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
@@ -284,7 +286,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                                             <ExternalLink className="h-4 w-4" />
                                                         </button>
                                                     </div>
-                                                </div>
+                                                </div> */}
                                             </div>
                                         </div>
                                     ))}
@@ -292,7 +294,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
 
                                 <div className="p-6 border-t border-gray-200">
                                     <button className="w-full text-center text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-lg transition-colors">
-                                        View All Matches
+                                        Load more
                                     </button>
                                 </div>
                             </div>
@@ -331,7 +333,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                         </div> */}
 
                         {/* Recent Activity */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <ErrorComponents name="Recent Activity">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
                                 <div className="space-y-4">
@@ -364,7 +366,7 @@ export default function HomeDashboard({ formData, setFormData, handleFormSubmit 
                                     </div>
                                 </div>
                             </ErrorComponents>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

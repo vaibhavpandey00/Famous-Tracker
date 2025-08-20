@@ -109,7 +109,7 @@ export default function PricingPage({ activeSub }) {
     return (
         <div className="flex flex-col items-center justify-center w-full">
 
-            <div className="min-h-screen w-[70%] bg-gray-50">
+            <div className="min-h-screen w-[80%] bg-gray-50">
 
                 <div className="max-w-8xl mx-auto px-6 py-12 border">
                     {/* Hero Section */}

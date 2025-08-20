@@ -19,48 +19,9 @@ import {
 
 const steps = [
     { id: 1, title: "Personal Info", icon: User },
-    { id: 2, title: "Alert Settings", icon: Bell },
-    { id: 3, title: "Terms & Conditions", icon: FileText },
-    { id: 4, title: "Review & Start", icon: CheckCircle },
-]
-
-const alertCategories = [
-    {
-        id: "celebrity",
-        name: "Celebrity",
-        icon: Star,
-        color: "text-yellow-600",
-        bgColor: "bg-yellow-50",
-        borderColor: "border-yellow-200",
-        description: "Movie stars, TV personalities, and A-list celebrities",
-    },
-    {
-        id: "influencer",
-        name: "Influencer",
-        icon: Users,
-        color: "text-blue-600",
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
-        description: "Social media influencers and content creators",
-    },
-    {
-        id: "athlete",
-        name: "Athlete",
-        icon: Trophy,
-        color: "text-green-600",
-        bgColor: "bg-green-50",
-        borderColor: "border-green-200",
-        description: "Professional athletes and sports personalities",
-    },
-    {
-        id: "musician",
-        name: "Musician",
-        icon: Music,
-        color: "text-purple-600",
-        bgColor: "bg-purple-50",
-        borderColor: "border-purple-200",
-        description: "Recording artists, bands, and music industry figures",
-    },
+    // { id: 2, title: "Alert Settings", icon: Bell },
+    { id: 2, title: "Terms & Conditions", icon: FileText },
+    { id: 3, title: "Review & Start", icon: CheckCircle },
 ]
 
 const WelcomePage = ({ formData, setFormData, onComplete }) => {
@@ -84,16 +45,6 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
         }
     }
 
-    const handleCategoryToggle = (categoryId) => {
-        setFormData((prev) => ({
-            ...prev,
-            categories: {
-                ...prev.categories,
-                [ categoryId ]: !prev.categories[ categoryId ],
-            },
-        }))
-    }
-
     const validateStep = (step) => {
         const newErrors = {}
 
@@ -107,19 +58,6 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
         }
 
         if (step === 2) {
-            if (formData.minimumOrderValue < 0) {
-                newErrors.minimumOrderValue = "Order value must be positive"
-            }
-            if (formData.minimumFollowers < 0) {
-                newErrors.minimumFollowers = "Follower count must be positive"
-            }
-            const hasSelectedCategory = Object.values(formData.categories).some((selected) => selected)
-            if (!hasSelectedCategory) {
-                newErrors.categories = "Please select at least one category"
-            }
-        }
-
-        if (step === 3) {
             if (!formData.termsAccepted) {
                 newErrors.termsAccepted = "You must accept the terms and conditions"
             }
@@ -140,15 +78,9 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
     }
 
     const handleGetStarted = () => {
-        if (validateStep(4)) {
+        if (validateStep(3)) {
             onComplete();
         }
-    }
-
-    const formatNumber = (num) => {
-        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-        if (num >= 1000) return `${(num / 1000).toFixed(0)}K`
-        return num.toString()
     }
 
     if (!isOnboarding) {
@@ -339,101 +271,6 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                     )}
 
                     {currentStep === 1 && (
-                        /* Step 2: Alert Settings */
-                        <div>
-                            <div className="text-center mb-8">
-                                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                                    <Bell className="h-8 w-8 text-green-600" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Alert Triggers</h2>
-                                <p className="text-gray-600">Configure when you want to be notified about celebrity purchases</p>
-                            </div>
-
-                            <div className="space-y-8">
-                                {/* Alert Thresholds */}
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Order Value ($)</label>
-                                        <div className="relative">
-                                            <DollarSign className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                            <input
-                                                type="number"
-                                                value={formData.minimumOrderValue}
-                                                onChange={(e) => handleInputChange("minimumOrderValue", Number.parseInt(e.target.value))}
-                                                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.minimumOrderValue ? "border-red-300" : "border-gray-300"
-                                                    }`}
-                                                placeholder="100"
-                                                min="0"
-                                            />
-                                        </div>
-                                        {errors.minimumOrderValue && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.minimumOrderValue}</p>
-                                        )}
-                                        <p className="text-gray-500 text-sm mt-1">Only alert for orders above this amount</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Followers</label>
-                                        <div className="relative">
-                                            <Users className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                            <input
-                                                type="number"
-                                                value={formData.minimumFollowers}
-                                                onChange={(e) => handleInputChange("minimumFollowers", Number.parseInt(e.target.value))}
-                                                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.minimumFollowers ? "border-red-300" : "border-gray-300"
-                                                    }`}
-                                                placeholder="10000"
-                                                min="0"
-                                            />
-                                        </div>
-                                        {errors.minimumFollowers && <p className="text-red-600 text-sm mt-1">{errors.minimumFollowers}</p>}
-                                        <p className="text-gray-500 text-sm mt-1">Only alert for influencers with this many followers</p>
-                                    </div>
-                                </div>
-
-                                {/* Alert Categories */}
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Alert Categories</h3>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                        {alertCategories.map((category) => {
-                                            const IconComponent = category.icon
-                                            const isSelected = formData.categories[ category.id ]
-
-                                            return (
-                                                <div
-                                                    key={category.id}
-                                                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${isSelected
-                                                        ? `${category.borderColor} ${category.bgColor}`
-                                                        : "border-gray-200 hover:border-gray-300 bg-white"
-                                                        }`}
-                                                    onClick={() => handleCategoryToggle(category.id)}
-                                                >
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-start space-x-3">
-                                                            <IconComponent className={`h-6 w-6 ${isSelected ? category.color : "text-gray-400"}`} />
-                                                            <div>
-                                                                <h4 className="font-medium text-gray-900">{category.name}</h4>
-                                                                <p className="text-sm text-gray-600">{category.description}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div
-                                                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? `border-blue-500 bg-blue-500` : "border-gray-300"
-                                                                }`}
-                                                        >
-                                                            {isSelected && <Check className="h-4 w-4 text-white" />}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                    {errors.categories && <p className="text-red-600 text-sm mt-2">{errors.categories}</p>}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {currentStep === 2 && (
                         /* Step 3: Terms & Conditions */
                         <div>
                             <div className="text-center mb-8">
@@ -580,7 +417,7 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                         </div>
                     )}
 
-                    {currentStep === 3 && (
+                    {currentStep === 2 && (
                         /* Step 4: Review & Start */
                         <div>
                             <div className="text-center mb-8">
@@ -606,46 +443,6 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                                         <div>
                                             <span className="text-gray-600">Email:</span>
                                             <span className="ml-2 font-medium text-gray-900">{formData.email}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Alert Settings Summary */}
-                                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                                        <Bell className="h-5 w-5 text-green-600" />
-                                        <span>Alert Configuration</span>
-                                    </h3>
-                                    <div className="space-y-3 text-sm">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div>
-                                                <span className="text-gray-600">Minimum Order Value:</span>
-                                                <span className="ml-2 font-medium text-gray-900">${formData.minimumOrderValue}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-600">Minimum Followers:</span>
-                                                <span className="ml-2 font-medium text-gray-900">
-                                                    {formatNumber(formData.minimumFollowers)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-600">Alert Categories:</span>
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {Object.entries(formData.categories)
-                                                    .filter(([ _, selected ]) => selected)
-                                                    .map(([ category, _ ]) => {
-                                                        const categoryData = alertCategories.find((c) => c.id === category)
-                                                        return (
-                                                            <span
-                                                                key={category}
-                                                                className={`px-3 py-1 rounded-full text-xs font-medium ${categoryData.bgColor} ${categoryData.color} border ${categoryData.borderColor}`}
-                                                            >
-                                                                {categoryData.name}
-                                                            </span>
-                                                        )
-                                                    })}
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -692,7 +489,7 @@ const WelcomePage = ({ formData, setFormData, onComplete }) => {
                             <span>Previous</span>
                         </button>
 
-                        {currentStep < 3 ? (
+                        {currentStep < 2 ? (
                             <button
                                 onClick={handleNext}
                                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors"

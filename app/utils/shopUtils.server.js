@@ -1,5 +1,6 @@
 import prisma from "../db.server";
 import { getCache, setCache, invalidateCache } from "./cache.server.js";
+import { calculateDashboardData } from "./ShopStats.server.js";
 
 // Retry utility for handling network issues
 const retryOperation = async (operation, maxRetries = 3, delay = 1000) => {
@@ -75,7 +76,7 @@ export const getShopData = async (admin, shopDomain) => {
 
   if (!shopRecord) {
     // If the record doesn't exist, create a new one.
-    shopRecord = await createShopRecord(shopInfoResponse);
+    shopRecord = await retryOperation(() => createShopRecord(shopInfoResponse));
   }
 
   // 3. Store the newly fetched data in the cache before returning.
@@ -94,15 +95,10 @@ const createShopRecord = async (shopInfoResponse) => {
       email: shopEmail || null,
       name: null,
       subscriptionStatus: { active: false, subId: null },
-      categories: { celebrity: true, influencer: true, athlete: true, musician: true },
-      alertFrequency: "immediate",
-      quietHours: { enabled: false, start: "22:00", end: "08:00" },
       emailAlerts: true,
       slackAlerts: false,
       webhookAlerts: true,
-      inAppAlerts: true,
-      minimumOrderValue: 0,
-      minimumFollowers: 0,
+      inAppAlerts: true
     },
   });
 
@@ -140,6 +136,49 @@ export const updateShopRecord = async (admin, data) => {
   return updatedShop;
 };
 
+export const getShopStats = async (admin) => {
+  try {
+    const shopInfoResponse = await getShopID(admin);
+    const { id: graphqlShopID, name: shopName } = shopInfoResponse;
+
+    const cacheKey = `shop_dashboard_${shopName}`;
+
+    // Check the cache first
+    const cachedShopData = getCache(cacheKey);
+    if (cachedShopData && cachedShopData !== null) {
+      return cachedShopData;
+    }
+
+    // 1. Find internal shop record using the Shopify ID.
+    const shopRecord = await prisma.Shops.findUnique({
+      where: { shopId: graphqlShopID },
+      select: { id: true },
+    });
+
+    if (!shopRecord) {
+      console.log("Shop not found in our database.");
+      return null;
+    }
+
+    const internalShopId = shopRecord.id;
+
+    const matches = await prisma.MatchedCelebrity.findMany({
+      where: { shopId: internalShopId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const dashboardData = calculateDashboardData(matches, shopName);
+
+    setCache(cacheKey, dashboardData, 1800);
+
+    return dashboardData;
+
+  } catch (error) {
+    console.error("Failed to get shop stats:", error);
+    return null;
+  }
+};
+
 // Functions only for webhooks related activity
 export const webhookShopData = async (shopName) => {
   const cacheKey = `shop_data_${shopName}`;
@@ -165,21 +204,50 @@ export const webhookShopData = async (shopName) => {
 }
 
 export const appUninstalled = async (shopName) => {
-  const cacheKey = `shop_data_${shopName}`;
+  const cacheKey1 = `shop_data_${shopName}`;
+  const cacheKey2 = `shop_dashboard_${shopName}`;
 
-  await prisma.Shops.update({
-    where: { shopName },
-    data: {
-      termsAccepted: false,
-      subscriptionStatus: {
-        active: false,
-        subId: null,
+  try {
+    // Find the shop record to get unique ID.
+    const shop = await prisma.Shops.findUnique({
+      where: { shopName },
+    });
+
+    // If the shop doesn't exist, log it and exit.
+    if (!shop) {
+      console.log(`Shop "${shopName}" not found. No action taken.`);
+      return;
+    }
+
+    // Delete all MatchedCelebrity records associated with this shop's ID.
+    const deleteResult = await prisma.matchedCelebrity.deleteMany({
+      where: {
+        shopId: shop.id,
       },
-    },
-  });
-  invalidateCache(cacheKey);
+    });
 
-  console.log("App has been uninstalled.");
+    // console.log(`${deleteResult.count} MatchedCelebrity records deleted for shop: ${shopName}`);
 
-  return;
-}
+    // Update the shop's status to reflect the uninstallation.
+    await prisma.Shops.update({
+      where: { shopName },
+      data: {
+        termsAccepted: false,
+        subscriptionStatus: {
+          set: {
+            active: false,
+            subId: null,
+          },
+        },
+      },
+    });
+
+    // Invalidate the cache for this shop.
+    invalidateCache(cacheKey1);
+    invalidateCache(cacheKey2);
+
+    // console.log(`App has been successfully uninstalled and data cleared for shop: ${shopName}`);
+  } catch (error) {
+    console.error(`An error occurred during app uninstallation for ${shopName}:`, error);
+  }
+};

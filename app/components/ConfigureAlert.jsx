@@ -178,7 +178,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                     </div>
 
                     {/* Categories */}
-                    <div>
+                    {/* <div>
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Alert Categories</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {Object.entries(formData.categories).map(([ category, enabled ]) => (
@@ -196,7 +196,7 @@ export default function ConfigureAlerts({ formData, setFormData, onClose, handle
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Alert Frequency */}
                     {/* <div>

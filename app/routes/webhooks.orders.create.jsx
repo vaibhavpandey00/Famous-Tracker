@@ -14,11 +14,9 @@ export const action = async ({ request }) => {
 
     const shopName = shop.replace(".myshopify.com", "");
     const formattedData = formatShopifyOrder(payload);
-    // console.log(`📦 Order payload: ${JSON.stringify(formattedData, null, 2)}`);
 
-    let shopDataDb;
     try {
-        shopDataDb = await webhookShopData(shopName);
+        const shopDataDb = await webhookShopData(shopName);
 
         if (shopDataDb === null) {
             console.log("Shop data is null. No action taken.");
@@ -31,58 +29,79 @@ export const action = async ({ request }) => {
             return new Response("Subscription is inactive. No action taken.", { status: 200 });
         }
 
-        const { name: userName, email: userEmail, categories, minimumOrderValue, minimumFollowers, emailAlerts, slackAlerts, inAppAlerts } = shopDataDb;
-
         // console.log("----- Shop Data -----");
-        // console.log("Name: ", userName);
-        // console.log("Email: ", userEmail);
-        // console.log("Categories: ", categories);
-        // console.log("Minimum Order Value: ", minimumOrderValue);
-        // console.log("Minimum Followers: ", minimumFollowers);
-        // console.log("Email Alert: ", emailAlerts);
-        // console.log("Slack Alert: ", slackAlerts);
-        // console.log("In-App Alert: ", inAppAlerts);
-
-        if (formattedData.spent < minimumOrderValue) {
-            console.log("Order value is below the minimum threshold. No alert will be sent.");
-            return new Response("Order value is below the minimum threshold. No alert will be sent.", { status: 200 });
-        }
+        // console.log(`Order payload: ${JSON.stringify(formattedData, null, 2)}`);
+        // console.log("Shop Data: ", shopDataDb);
 
         const { sendOrderAlertEmail } = await import("../utils/orderCreate.server")
-        const { findCelebMatch, doCategoriesMatch } = await import("../utils/matchCeleb.server");
+        const { findCelebMatch, newCelebMatchRecord } = await import("../utils/matchCeleb.server");
 
         // Check if the Celeb has a match in the DB
-        const celebMatch = await findCelebMatch(formattedData.customerName);
+        const celebMatch = await findCelebMatch(formattedData.customerName, formattedData.normalizedName);
 
         if (!celebMatch || celebMatch === null) {
             console.log("No celeb match found. No alert will be sent.");
             return new Response("No celeb match found. No alert will be sent.", { status: 200 });
         }
 
-        // Destructure the celebMatch object
-        const { fullName, celebCategory, maxFollower, socials, note } = celebMatch;
+        // Save the new Matched Celebrity to DB
+        const celebDataTOSave = {
+            // shopId is foreign key
+            shopId: shopDataDb.id,
+            // Customer Details
+            customerName: formattedData.customerName,
+            orderId: formattedData.orderId.toString(),
+            products: formattedData.products,
+            orderValue: formattedData.spent,
+            // Customer matching celebrity detials
+            matchedCelebName: celebMatch.fullName,
+            celebCategories: celebMatch.categories,
+            socials: celebMatch.socials,
+            maxFollowerDisplay: celebMatch.maxFollowerDisplay,
+        }
+        const newCelebMatch = await newCelebMatchRecord(celebDataTOSave, shopName);
 
-        if (maxFollower < minimumFollowers) {
-            console.log("Celeb has fewer followers than the minimum threshold. No alert will be sent.");
-            return new Response("Celeb has fewer followers than the minimum threshold. No alert will be sent.", { status: 200 });
+        if (newCelebMatch === null) {
+            console.log("Failed to save new Celeb Match record to DB. No alert will be sent.");
+            // return new Response("Failed to save new Celeb Match record to DB. No alert will be sent.", { status: 200 });
         }
 
-        // It checks if the celeb's categories match the user's enabled alert settings
-        const categoryMatch = doCategoriesMatch(categories, celebCategory);
+        if (shopDataDb.email && shopDataDb.emailAlerts) {
+            const matchesForEmail = [ {
+                fullName: celebMatch.fullName,
+                score: celebMatch.score,
+            } ];
 
-        if (!categoryMatch) {
-            console.log("Categories do not match. No alert will be sent.");
-            return new Response("Categories do not match. No alert will be sent.", { status: 200 });
+            const emailData = {
+                // Shop owner details
+                userName: shopDataDb.name,
+                userEmail: shopDataDb.email,
+                // Customer details
+                customerName: formattedData.customerName,
+                customerEmail: formattedData.customerEmail,
+                shippingAddress: formattedData.shippingAddress,
+                acceptsMarketing: formattedData.acceptsMarketing,
+                orderId: formattedData.orderId,
+                products: formattedData.products,
+                spent: formattedData.spent,
+                // Celebrity details
+                matches: matchesForEmail,
+                customerCategory: celebMatch.categories,
+                maxFollowerDisplay: celebMatch.maxFollowerDisplay,
+                socials: celebMatch.socials,
+                notableAchievements: celebMatch.notableAchievements,
+                note: celebMatch.notes,
+                createdAt: formattedData.createdAt,
+            };
+
+            await sendOrderAlertEmail(emailData);
         }
 
-        if (userEmail && emailAlerts) {
-            await sendOrderAlertEmail(userName, userEmail, celebCategory, formattedData.customerName, fullName, formattedData.customerEmail, formattedData.products, formattedData.spent, formattedData.createdAt, note);
-        }
+        return new Response("Webhook processed", { status: 200 });
 
     } catch (error) {
-        console.log("Failed to get the shop data: ", error);
-    } finally {
-        return json({ message: "Webhook processed successfully." }, { status: 200 });
+        console.log("Error processing webhook: ", error);
+        return new Response("Error processing webhook", { status: 500 });
     }
 };
 
@@ -132,13 +151,39 @@ function formatShopifyOrder(payload) {
     // Assemble the parts into your exact custom format
     const createdAtFormatted = `${partsMap.month} ${partsMap.day}, ${partsMap.year} at ${partsMap.hour}:${partsMap.minute} ${partsMap.dayPeriod}`;
 
+    // --- NEW: Generate the normalizedName slug ---
+    const city = payload.shipping_address?.city ?? '';
+    const state = payload.shipping_address?.province ?? '';
+
+    // A small helper function to clean and format each part of the slug
+    const cleanPart = (str) => str.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+    const normalizedName = [
+        cleanPart(customerName),
+        cleanPart(city),
+        cleanPart(state)
+    ].filter(part => part).join('_'); // Filter out empty parts and join with an underscore
+
+    // 1. Create an array of address parts in order
+    const addressParts = [
+        payload.shipping_address?.address1,
+        payload.shipping_address?.address2,
+        payload.shipping_address?.city,
+        payload.shipping_address?.province,
+        payload.shipping_address?.zip,
+        payload.shipping_address?.country
+    ];
+
+    // 2. Filter out empty/null parts and 3. Join them into a string
+    const formattedAddress = addressParts.filter(Boolean).join(', ');
 
     // Construct and return the clean object
     const cleanData = {
         orderId: payload.id,
         customerName: customerName,
+        normalizedName: normalizedName,
         customerEmail: payload.contact_email,
-        shippingAddress: payload.shipping_address,
+        shippingAddress: formattedAddress,
         products: products,
         spent: parseFloat(payload.current_total_price),
         createdAt: createdAtFormatted,

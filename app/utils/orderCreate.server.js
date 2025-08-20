@@ -2,12 +2,38 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import AlertEmail from "../emails/AlertEmail";
 
-export const sendOrderAlertEmail = async (userName, userEmail, customerCategory, customerName, fullName, customerEmail, products, spent, createdAt, note) => {
+export const sendOrderAlertEmail = async (emailProps) => {
+
+    if (!process.env.RESEND_API_KEY) {
+        console.error("FATAL: RESEND_API_KEY is not defined in environment variables.");
+        throw new Error("Email provider is not configured.");
+    }
+
+    // --- CHECK #2: Recipient Email ---
+    if (!emailProps.userEmail) {
+        console.error("Skipping email send: 'userEmail' is missing.");
+        return;
+    }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     try {
-        const emailHtml = await render(AlertEmail({ userName, customerCategory, customerName, fullName, customerEmail, products, spent, createdAt, note }));
+        const emailHtml = await render(AlertEmail({
+            userName: emailProps.userName,
+            orderId: emailProps.orderId,
+            customerName: emailProps.customerName,
+            customerEmail: emailProps.customerEmail,
+            socials: emailProps.socials,
+            shippingAddress: emailProps.shippingAddress,
+            acceptsMarketing: emailProps.acceptsMarketing,
+            matches: emailProps.matches,
+            customerCategory: emailProps.customerCategory,
+            products: emailProps.products,
+            spent: emailProps.spent,
+            notableAchievements: emailProps.notableAchievements,
+            note: emailProps.note,
+            createdAt: emailProps.createdAt,
+        }));
 
         if (typeof emailHtml !== 'string') {
             console.error("Rendered email HTML is not a string:", typeof emailHtml);
@@ -16,12 +42,12 @@ export const sendOrderAlertEmail = async (userName, userEmail, customerCategory,
 
         const { data, error } = await resend.emails.send({
             from: "Famous Tracker <notifications@famoustracker.io>",
-            to: [ userEmail ],
+            to: [ emailProps.userEmail ],
 
             subject: `New purchase notification from Famous Tracker`,
 
             html: emailHtml,
-            text: generatePlainTextVersion(userName, customerName, customerEmail, products, spent),
+            text: generatePlainTextVersion(emailProps),
 
             // IMPROVED: Essential headers only
             headers: {
@@ -55,16 +81,16 @@ export const sendOrderAlertEmail = async (userName, userEmail, customerCategory,
     }
 }
 
-function generatePlainTextVersion(userName, customerName, customerEmail, products, spent) {
-    return `Hi ${userName},
+function generatePlainTextVersion(emailProps) {
+    return `Hi ${emailProps.userName},
 
 You have a new purchase notification from Famous Tracker.
 
 Customer Details:
-Name: ${customerName}
-Email: ${customerEmail}
-Purchase: ${products.join(', ')}
-Amount: $${spent}
+Name: ${emailProps.customerName}
+Email: ${emailProps.customerEmail}
+Purchase: ${emailProps.products.join(', ')}
+Amount: $${emailProps.spent}
 
 This customer falls into the celebrity category, which may present partnership opportunities.
 
@@ -80,7 +106,7 @@ Best practices for outreach:
 - Focus on providing value first
 
 Sample message:
-"Hi ${customerName.split(' ')[ 0 ]}, thank you for choosing our ${products.join(', ')}! I'd love to hear your thoughts on the products. Would you be interested in sharing a quick review? I'd be happy to send you something from our upcoming collection as a thank you."
+"Hi ${emailProps.customerName.split(' ')[ 0 ]}, thank you for choosing our ${emailProps.products.join(', ')}! I'd love to hear your thoughts on the products. Would you be interested in sharing a quick review? I'd be happy to send you something from our upcoming collection as a thank you."
 
 ---
 Famous Tracker
