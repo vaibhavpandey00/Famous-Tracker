@@ -1,33 +1,25 @@
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { json, useFetcher, useLoaderData } from "@remix-run/react";
 import { TitleBar } from "@shopify/app-bridge-react";
-import {
-  Banner,
-  Button,
-  List,
-  Text
-} from "@shopify/polaris";
+import { Text } from "@shopify/polaris";
+import { Crown } from "lucide-react";
 import { useEffect, useState } from "react";
+import CriticalBanner from "../components/CriticalBanner";
 import Home from "../components/Home";
 import PricingPage from "../components/PricingPage";
 import { authenticate } from "../shopify.server";
-import { useRouteError, isRouteErrorResponse } from "@remix-run/react"; // Import these for ErrorBoundary
+import { useRouteError, isRouteErrorResponse } from "@remix-run/react";
+import logger from "../utils/logger.client";
+import { hasDataChanged, getChangedFields } from "../utils/indexUtils.client";
 
 export const loader = async ({ request }) => {
-  // --- START: Added Logging and Session Check ---
   console.log("Loader: Starting authentication process...");
 
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session, billing } = await authenticate.admin(request);
 
   console.log("Loader: Authentication attempt completed.");
-  console.log("  Session exists:", !!session); // Logs true if session is an object, false otherwise
 
-  if (session) {
-    console.log("  Session ID:", session.id);
-    console.log("  Access Token present:", !!session.accessToken ? "YES" : "NO");
-  } else {
+  if (!session || !session.accessToken) {
     console.warn("Loader: No session object found after authenticate.admin. This might indicate an issue or a pending redirect.");
-    // If authenticate.admin didn't redirect, you might need to handle it here.
-    // For embedded apps, it typically handles the redirect itself.
     throw new Error("Authentication failed: No session available. Please try reinstalling the app.");
   }
 
@@ -36,19 +28,52 @@ export const loader = async ({ request }) => {
     throw new Error("Internal error: Admin context not available. Please try again.");
   }
 
-  const { getShopData } = await import("../utils/shopUtils");
+  let checkPlans;
+  let haveActiveSubscription = false;
+  let subscriptionId = null;
 
   try {
-    console.log("Loader: Attempting to fetch shop data using admin.graphql...");
-    const rawShopData = await getShopData(admin, session.shop);
-    console.log("Loader: Successfully fetched raw shop data.");
+    // This is the line that's failing
+    checkPlans = await billing.check();
+    haveActiveSubscription = checkPlans.hasActivePayment;
+    subscriptionId = checkPlans.appSubscriptions[ 0 ]?.id;
+  } catch (error) {
+    console.error("Failed to check billing:", error.message);
+    haveActiveSubscription = false;
+    throw error;
+  }
 
-    const { subscriptionStatus, ...restOfShopData } = rawShopData;
+  // console.log("Loader: haveActiveSubscription:", haveActiveSubscription);
+  // if (haveActiveSubscription) {
+  //   await billing.cancel({
+  //     subscriptionId: subscriptionId,
+  //     isTest: true
+  //   })
+  // }
 
-    const modifiedShopData = {
-      ...restOfShopData,
-      haveActiveSubscription: subscriptionStatus?.active || false,
-    };
+  if (!haveActiveSubscription) {
+    const dataToSend = { haveActiveSubscription };
+    return dataToSend;
+  }
+
+  const { getShopData, getShopStats } = await import("../utils/shopUtils.server");
+
+  try {
+    const shopName = session.shop.replace(".myshopify.com", "");
+    // console.log("Loader: Attempting to fetch shop data using admin.graphql...");
+    const [ shopData, shopDashboardData ] = await Promise.all([ getShopData(admin, shopName), getShopStats(admin) ]);
+    
+    const hasCompletedWelcome = shopData.termsAccepted;
+
+    if (!hasCompletedWelcome) {
+      return redirect("/app/welcome");
+    }
+
+    const modifiedShopData = { ...shopData };
+
+    modifiedShopData.stats = shopDashboardData.stats;
+    modifiedShopData.recentMatches = shopDashboardData.recentMatches;
+    modifiedShopData.haveActiveSubscription = haveActiveSubscription;
 
     delete modifiedShopData.id;
     delete modifiedShopData.shopId;
@@ -56,32 +81,38 @@ export const loader = async ({ request }) => {
     delete modifiedShopData.updatedAt;
     delete modifiedShopData.subscriptionStatus;
 
-    console.log("Loader: Returning modified shop data.");
+    console.log("Loader: Returning shop data.");
     return modifiedShopData;
   } catch (error) {
     console.error("Loader: Error during shop data processing or fetching:", error);
-    // Re-throw the error to be caught by the ErrorBoundary
     throw error;
   }
 };
 
 export const action = async ({ request }) => {
-  const { addCeleb } = await import("../utils/addCelebs");
-  const { updateShopRecord } = await import("../utils/shopUtils");
+  const { updateShopRecord } = await import("../utils/shopUtils.server");
   const { admin } = await authenticate.admin(request);
 
   const shopData = await request.json();
-  // console.log("Action Shop Data:", shopData);
+  const Action = shopData.Action;
+  // console.log("Action:", Action);
 
-  const updatedShopData = await updateShopRecord(admin, shopData);
-  console.log("Updated Shop Data:", updatedShopData);
+  switch (Action) {
+    case "updateShopRecord":
+      delete shopData.Action;
+      await updateShopRecord(admin, shopData);
+      break;
+
+    default:
+      console.error("Unknown action:", Action);
+      break;
+  }
 
   return null;
 };
 
 export default function Index() {
   const fetcher = useFetcher();
-  // const shopify = useAppBridge();
   const loaderData = useLoaderData();
   const [ formData, setFormData ] = useState({
     // Personal Information
@@ -113,105 +144,58 @@ export default function Index() {
     },
     haveActiveSubscription: false
   });
+  const [ stats, setStats ] = useState(null);
+  const [ recentMatches, setRecentMatches ] = useState([]);
   const [ originalData, setOriginalData ] = useState(null);
   const [ activeTab, setActiveTab ] = useState("home");
 
   useEffect(() => {
-    if (loaderData) {
+    if (loaderData && loaderData.haveActiveSubscription) {
+      // console.log("Loader Data:", loaderData);
+
       const updatedFormData = {
         ...formData,
         ...loaderData,
         categories: { ...formData.categories, ...loaderData.categories },
         quietHours: { ...formData.quietHours, ...loaderData.quietHours },
       };
-
       setFormData(updatedFormData);
+
+      // Set stats and recentMatches
+      loaderData.stats ? setStats(loaderData.stats) : setStats(null);
+      loaderData.recentMatches.length > 0 ? setRecentMatches(loaderData.recentMatches) : setRecentMatches([]);
 
       // Store original data for comparison (excluding haveActiveSubscription)
       const originalDataCopy = { ...updatedFormData };
       delete originalDataCopy.haveActiveSubscription;
       setOriginalData(originalDataCopy);
     }
+    if (loaderData && !loaderData.haveActiveSubscription) {
+      setFormData({ ...formData, haveActiveSubscription: false });
+      setActiveTab("pricing");
+    }
   }, [ loaderData ]);
 
-  // Deep comparison function
-  const deepEqual = (obj1, obj2) => {
-    if (obj1 === obj2) return true;
-
-    if (obj1 == null || obj2 == null) return false;
-
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
-      return obj1 === obj2;
-    }
-
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) return false;
-
-    for (let key of keys1) {
-      if (!keys2.includes(key)) return false;
-      if (!deepEqual(obj1[ key ], obj2[ key ])) return false;
-    }
-
-    return true;
-  };
-
-  // Function to check if data has changed
-  const hasDataChanged = () => {
-    if (!originalData) return true; // If no original data, allow submission
-
-    const currentData = { ...formData };
-    delete currentData.haveActiveSubscription;
-
-    return !deepEqual(originalData, currentData);
-  };
-
-  // Function to get changed fields (optional - for debugging/logging)
-  // const getChangedFields = () => {
-  //   if (!originalData) return {};
-
-  //   const currentData = { ...formData };
-  //   delete currentData.haveActiveSubscription;
-
-  //   const changes = {};
-  //   const findChanges = (original, current, path = '') => {
-  //     for (const key in current) {
-  //       const currentPath = path ? `${path}.${key}` : key;
-
-  //       if (typeof current[ key ] === 'object' && current[ key ] !== null && !Array.isArray(current[ key ])) {
-  //         if (typeof original[ key ] === 'object' && original[ key ] !== null) {
-  //           findChanges(original[ key ], current[ key ], currentPath);
-  //         } else {
-  //           changes[ currentPath ] = { from: original[ key ], to: current[ key ] };
-  //         }
-  //       } else if (original[ key ] !== current[ key ]) {
-  //         changes[ currentPath ] = { from: original[ key ], to: current[ key ] };
-  //       }
-  //     }
-  //   };
-
-  //   findChanges(originalData, currentData);
-  //   return changes;
-  // };
-
-  const handleFormSubmit = () => {
-    console.log("Form submit requested...");
+  const handleFormSubmit = (getAction) => {
+    logger.log("Form submit requested...");
 
     // Check if data has changed
-    if (!hasDataChanged()) {
-      console.log("No changes detected, skipping submission");
+    if (!hasDataChanged(originalData, formData)) {
+      logger.log("No changes detected, skipping submission");
       return;
     }
 
-    console.log("Changes detected, submitting form...");
-
     //Log what changed for debugging
-    // const changedFields = getChangedFields();
-    // console.log("Changed fields:", changedFields);
+    // const changedFields = getChangedFields(originalData, formData);
+    // logger.log("Changed fields:", changedFields);
 
     const dataToUpdate = { ...formData };
     delete dataToUpdate.haveActiveSubscription;
+
+    const Action = getAction;
+    logger.info("Action:", Action);
+
+    dataToUpdate.Action = Action;
 
     fetcher.submit(JSON.stringify(dataToUpdate), {
       method: "post",
@@ -219,15 +203,14 @@ export default function Index() {
     });
   };
 
-  return (
+  return (<>
     <div className="flex flex-col items-center ">
       {/* Title bar */}
       <TitleBar title="Famous Tracker" />
 
       {/* Toggle tab home and pricing */}
       <div
-        className="flex w-[70%] items-center justify-between mb-3 space-x-4"
-      >
+        className="flex w-full lg:w-[80%] items-center justify-between mb-3 space-x-4">
 
         <Text as="h2" variant="headingLg">/ {activeTab === "home" ? "Dashboard" : "Pricing"}</Text>
 
@@ -245,52 +228,68 @@ export default function Index() {
 
         </div>
 
-
       </div>
-
-      {!formData.name && !formData.email && formData.haveActiveSubscription && (
-        <div className="flex justify-start">
-          <Banner
-            title="Before you move ahead, please provide your detials in Configure Alerts:"
-            tone="warning"
-          >
-            <List>
-              <List.Item>
-                We need your name to address you.
-              </List.Item>
-              <List.Item>
-                We need your email address to send you alerts.
-              </List.Item>
-            </List>
-          </Banner>
-        </div>
-      )}
-
-      {/* Home */}
-      {activeTab === "home" && formData.haveActiveSubscription && (<Home formData={formData} setFormData={setFormData} handleFormSubmit={handleFormSubmit} />
-      )}
 
       {/* For no active subscription */}
       {activeTab === "home" && !formData.haveActiveSubscription && <>
-        <Banner title="You have no active subscription" status="critical">
-          <p style={{ marginBottom: "15px" }}>Ohh no! Looks like you don't have an active subscription.</p>
-          <Button onClick={() => setActiveTab("pricing")}>Subscribe now</Button>
-        </Banner>
+        <CriticalBanner onSubscribeClick={() => setActiveTab("pricing")} />
       </>}
+
+      {/* Home */}
+      {activeTab === "home" && formData.haveActiveSubscription && (<Home
+        formData={formData}
+        setFormData={setFormData}
+        stats={stats}
+        recentMatches={recentMatches}
+        handleFormSubmit={handleFormSubmit}
+      />
+      )}
 
       {/* Pricing */}
       {activeTab === "pricing" && (
         <>
-          <PricingPage />
+          <PricingPage activeSub={formData.haveActiveSubscription} />
         </>
       )}
-
     </div>
+
+    {/* Footer */}
+    <footer className="text-black">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex items-center justify-center text-center gap-3">
+          {/* Brand Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
+              <Crown className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xl font-bold">Nova-Famous Tracker</span>
+          </div>
+
+          {/* Copyright & Propero Credit */}
+          <div className="text-sm text-gray-400">
+            <p>&copy; {new Date().getFullYear()} Nova-Famous Tracker. All rights reserved.</p>
+            <p>
+              Powered by{" "}
+              <a
+                href="https://www.propero.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-orange-400 hover:text-purple-300 transition"
+              >
+                Propero
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </>
+
   );
 }
 
 export function ErrorBoundary() {
-  const error = useRouteError(); // Get the error from Remix
+  const error = useRouteError();
 
   // Log the error for debugging purposes (this will appear in your server logs)
   console.error("ErrorBoundary caught an error:", error);

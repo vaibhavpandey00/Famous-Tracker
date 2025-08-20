@@ -1,13 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
@@ -32,86 +26,125 @@ model Session {
   emailVerified Boolean?  @default(false)
 }
 
-// Define an embedded type for Socials
-type Social {
-  platform  String
-  link      String
-  followers Int? // Followers might be optional or not always available
+// Enums ensure data consistency for categories and subcategories.
+enum Category {
+  ATHLETE
+  INFLUENCER
+  MUSICIAN
+  ACTOR
+  ENTREPRENEUR
 }
 
-// Define an embedded type for Address
-type Address {
-  street  String? // Make fields optional if not always present
+enum Subcategory {
+  // Athlete Subcategories
+  NFL
+  NBA
+  WNBA
+  MLB
+  MLS
+  PREMIER_LEAGUE
+  NHL
+  PGA_TOUR
+  FORMULA_1
+  // Influencer Subcategories
+  TWITTER
+  X
+  FACEBOOK
+  INSTAGRAM
+  YOUTUBE
+  TIKTOK
+  TWITCH
+}
+
+// Composite Type for grouping location fields.
+type Location {
   city    String?
   state   String?
-  zipCode String?
-  country String?
+  country String
 }
 
-model Celebs {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  fullName    String
-  email       String   @unique // Index: Unique index on email
-  phone       String?
-  address     Address?
-  categories  String[]
-  socials     Social[]
-  maxFollower String? //Added Max Follower to be filled by comparing followers of all the socials and taking out the maximum one
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([categories]) // Index: For fast lookup by category
-  @@index([fullName]) // Index: For fast lookup by full name
-  @@index([socials.platform]) // Index: For querying by social platform
-  @@index([socials.followers]) // Index: For querying by follower count
+// Composite Type for a flexible list of social media profiles.
+type Social {
+  platform String
+  link     String
 }
 
-model Shops {
-  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
-  shopId             String        @unique
-  shopName           String?
-  subscriptionStatus HasActiveSubs
+model GlobalCelebrity {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  fullName       String
+  normalizedName String
 
-  // Personal Information
-  name  String
-  email String @unique // Assuming email should be unique for each shop
+  categories    Category[]
+  subcategories Subcategory[]
 
-  // Alert Channels
-  emailAlerts   Boolean @default(false)
-  slackAlerts   Boolean @default(false)
-  webhookAlerts Boolean @default(true)
-  inAppAlerts   Boolean @default(false)
+  socials Social[]
 
-  minimumOrderValue Int @default(0)
-  minimumFollowers  Int @default(0)
+  location Location?
 
-  categories ShopCategories
+  // Athlete-specific fields remain optional.
+  league   String?
+  team     String?
+  position String?
 
-  alertFrequency String @default("immediate")
+  // Two fields for follower counts: one for calculation, one for display.
+  maxFollowerCount   BigInt?
+  maxFollowerDisplay String?
 
-  quietHours ShopQuietHours
+  notableAchievements String[]
+  notes               String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // --- Indexes for Performance ---
+  // Index for the new normalized name, critical for your search logic.
+  @@index([normalizedName])
+  // Index for searching by full name as a fallback.
+  @@index([fullName])
+  // Index to speed up filtering by categories.
+  @@index([categories])
+}
+
+model MatchedCelebrity {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Customer Details
+  customerName       String
+  orderId            String
+  products           String[]
+  orderValue         Float
+  // Customer matching celebrity detials
+  matchedCelebName   String
+  matchScore         Float?
+  celebCategories    String[]
+  socials            Social[]
+  maxFollowerDisplay String?
+  createdAt          DateTime @default(now())
+
+  // Relation to the Shops model
+  shopId String @db.ObjectId
+  shop   Shops  @relation(fields: [shopId], references: [id])
+
+  @@index([shopId, createdAt])
+}
+
+model Shops {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  shopId             String             @unique
+  shopName           String?            @unique
+  subscriptionStatus HasActiveSubs
+  name               String?
+  email              String?            @unique
+  emailAlerts        Boolean            @default(false)
+  slackAlerts        Boolean            @default(false)
+  webhookAlerts      Boolean            @default(true)
+  inAppAlerts        Boolean            @default(false)
+  termsAccepted      Boolean?           @default(false)
+  matches            MatchedCelebrity[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 type HasActiveSubs {
   active Boolean @default(false)
-  subId  String
-}
-
-// Embedded document for Alert Categories
-type ShopCategories {
-  celebrity  Boolean @default(true)
-  influencer Boolean @default(true)
-  athlete    Boolean @default(true)
-  musician   Boolean @default(true)
-}
-
-// Embedded document for Quiet Hours
-type ShopQuietHours {
-  enabled Boolean @default(false)
-  start   String  @default("22:00")
-  end     String  @default("08:00")
+  subId  String?
 }

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Database, Search, Plus, Edit, Trash2, Upload, Download, X, Star, Users, TrendingUp } from "lucide-react"
+import { Database, Search, Plus, Edit, Trash2, X, Star, Users, TrendingUp } from "lucide-react"
 import { useNavigate } from "@remix-run/react";
 
 const dummyInfluencers = [
@@ -122,7 +122,7 @@ export default function ManageDatabase({ onClose }) {
                         </div>
                         <div>
                             <h2 className="text-xl font-semibold text-gray-900">Manage Database</h2>
-                            <p className="text-sm text-gray-600">Manage your celebrity and influencer database</p>
+                            <p className="text-sm text-gray-600">Manage your custom celebrity and influencer database</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -138,7 +138,7 @@ export default function ManageDatabase({ onClose }) {
                                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search influencers..."
+                                    placeholder="Search..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
@@ -154,27 +154,10 @@ export default function ManageDatabase({ onClose }) {
                                 <option value="athlete">Athlete</option>
                                 <option value="influencer">Influencer</option>
                                 <option value="musician">Musician</option>
-                            </select>
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="pending">Pending</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="custom">Custom</option>
                             </select>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center space-x-2 transition-colors">
-                                <Upload className="h-4 w-4" />
-                                <span>Import</span>
-                            </button>
-                            <button className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center space-x-2 transition-colors">
-                                <Download className="h-4 w-4" />
-                                <span>Export</span>
-                            </button>
                             <button
                                 onClick={() => navigate("/app/admin/addcelebs/new")}
                                 className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors"
@@ -220,9 +203,6 @@ export default function ManageDatabase({ onClose }) {
                                     Category
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Platform
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Followers
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -266,7 +246,6 @@ export default function ManageDatabase({ onClose }) {
                                             <span className="text-sm text-gray-900">{influencer.category}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-900">{influencer.platform}</td>
                                     <td className="px-6 py-4 text-sm text-gray-900">{influencer.followers}</td>
                                     <td className="px-6 py-4 text-sm text-gray-900">{influencer.engagementRate}</td>
                                     <td className="px-6 py-4">

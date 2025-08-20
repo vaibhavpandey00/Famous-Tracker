@@ -29,6 +29,8 @@ export default function App() {
   const { showForm } = useLoaderData();
   const [ shopDomain, setShopDomain ] = useState("");
 
+  // UI V01
+
   const features = [
     {
       icon: Users,
@@ -239,17 +241,31 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between">
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col items-center text-center gap-5">
+            {/* Brand Logo */}
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Crown className="h-5 w-5 text-white" />
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
+                <Crown className="h-6 w-6 text-white" />
               </div>
-              <span className="text-lg font-bold">Nova-Famous Tracker</span>
+              <span className="text-xl font-bold">Nova-Famous Tracker</span>
             </div>
+
+            {/* Copyright & Propero Credit */}
             <div className="text-sm text-gray-400">
-              <p>&copy; 2025 Nova-Famous Tracker. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} Nova-Famous Tracker. All rights reserved.</p>
+              <p>
+                Powered by{" "}
+                <a
+                  href="https://www.propero.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-white hover:text-purple-300 transition"
+                >
+                  Propero
+                </a>
+              </p>
             </div>
           </div>
         </div>
